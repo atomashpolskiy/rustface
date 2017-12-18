@@ -1,0 +1,6 @@
+[package]
+name = "rustface"
+version = "0.1.0"
+authors = ["Andrei Tomashpolskiy <nordmann89@gmail.com>"]
+
+[dependencies]
