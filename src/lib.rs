@@ -9,6 +9,9 @@ pub struct FeatureMap {
     rect_sum: Vec<i32>,
     int_img: Vec<i32>,
     square_int_img: Vec<i32>,
+    // LABFeatureMap specifics
+    rect_width: u32,
+    rect_height: u32,
 }
 
 impl FeatureMap {
@@ -22,6 +25,8 @@ impl FeatureMap {
             rect_sum: vec![],
             int_img: vec![],
             square_int_img: vec![],
+            rect_width: 0,
+            rect_height: 0,
         }
     }
 
@@ -52,6 +57,38 @@ impl FeatureMap {
 
             compute_integral(self.int_img.as_mut_ptr(), self.width, self.height);
             compute_integral(self.square_int_img.as_mut_ptr(), self.width, self.height);
+        }
+    }
+
+    fn compute_rect_sum(&mut self) {
+        let width = (self.width - self.rect_width) as usize;
+        let height = self.height - self.rect_height;
+
+        let int_img_ptr = self.int_img.as_ptr();
+        let rect_sum_ptr = self.rect_sum.as_mut_ptr();
+
+        unsafe {
+            *rect_sum_ptr = *(int_img_ptr.offset(((self.rect_height - 1) * self.width + self.rect_width - 1) as isize));
+            math::vector_sub(
+                int_img_ptr.offset(((self.rect_height - 1) * self.width + self.rect_width) as isize),
+                int_img_ptr.offset(((self.rect_height - 1) * self.width) as isize),
+                rect_sum_ptr.offset(1),
+                width);
+
+            for i in 1..height {
+                let top_left = int_img_ptr.offset(((i - 1) * self.width) as isize);
+                let top_right = top_left.offset((self.rect_width - 1) as isize);
+                let bottom_left = top_left.offset((self.rect_height * self.width) as isize);
+                let bottom_right = bottom_left.offset((self.rect_width - 1) as isize);
+
+                let mut dest = rect_sum_ptr.offset((i * self.width) as isize);
+                *dest = *bottom_right - *top_right;
+                dest = dest.offset(1);
+
+                math::vector_sub(bottom_right.offset(1), top_right.offset(1), dest, width);
+                math::vector_sub(dest, bottom_left, dest, width);
+                math::vector_add(dest, top_left, dest, width);
+            }
         }
     }
 }
