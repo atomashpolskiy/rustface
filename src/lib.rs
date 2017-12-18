@@ -59,8 +59,35 @@ impl FeatureMap {
             math::copy_u8_to_i32(input, self.int_img.as_mut_ptr(), self.length);
             math::square(self.int_img.as_ptr(), self.square_int_img.as_mut_ptr(), self.length);
 
-            compute_integral(self.int_img.as_mut_ptr(), self.width, self.height);
-            compute_integral(self.square_int_img.as_mut_ptr(), self.width, self.height);
+            FeatureMap::compute_integral(self.int_img.as_mut_ptr(), self.width, self.height);
+            FeatureMap::compute_integral(self.square_int_img.as_mut_ptr(), self.width, self.height);
+        }
+    }
+
+    unsafe fn compute_integral(data: *mut i32, width: u32, height: u32) {
+        let mut src = data;
+        let mut dest = data;
+        let mut dest_previous_row = dest;
+
+        src = src.offset(1);
+        for _ in 1..width {
+            *dest.offset(1) = *dest + *src;
+
+            src = src.offset(1);
+            dest = dest.offset(1);
+        }
+
+        dest = dest.offset(1);
+        for _ in 1..height {
+            let mut s = 0;
+            for _ in 0..width {
+                s += *src;
+                *dest = *dest_previous_row + s;
+
+                src = src.offset(1);
+                dest = dest.offset(1);
+                dest_previous_row = dest_previous_row.offset(1);
+            }
         }
     }
 
@@ -149,33 +176,6 @@ impl FeatureMap {
                     };
                 }
             }
-        }
-    }
-}
-
-unsafe fn compute_integral(data: *mut i32, width: u32, height: u32) {
-    let mut src = data;
-    let mut dest = data;
-    let mut dest_previous_row = dest;
-
-    src = src.offset(1);
-    for _ in 1..width {
-        *dest.offset(1) = *dest + *src;
-
-        src = src.offset(1);
-        dest = dest.offset(1);
-    }
-
-    dest = dest.offset(1);
-    for _ in 1..height {
-        let mut s = 0;
-        for _ in 0..width {
-            s += *src;
-            *dest = *dest_previous_row + s;
-
-            src = src.offset(1);
-            dest = dest.offset(1);
-            dest_previous_row = dest_previous_row.offset(1);
         }
     }
 }
