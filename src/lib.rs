@@ -32,6 +32,46 @@ impl FeatureMap {
         }
     }
 
+    pub fn get_std_dev(&self) -> f64 {
+        let roi = self.roi.as_ref().unwrap();
+
+        let mean: f64;
+        let m2: f64;
+        let area: f64 = (roi.width() * roi.height()) as f64;
+
+        match (roi.x(), roi.y()) {
+            (0, 0) => {
+                let bottom_right = (roi.height() - 1) * self.width + roi.width() - 1;
+                mean = self.int_img[bottom_right as usize] as f64 / area;
+                m2 = self.square_int_img[bottom_right as usize] as f64 / area;
+            }
+            (0, _) => {
+                let top_right = (roi.y() - 1) * self.width + roi.width() - 1;
+                let bottom_right = top_right + roi.height() * self.width;
+                mean = (self.int_img[bottom_right as usize] - self.int_img[top_right as usize]) as f64 / area;
+                m2 = (self.square_int_img[bottom_right as usize] - self.square_int_img[top_right as usize]) as f64 / area;
+            }
+            (_, 0) => {
+                let bottom_left = (roi.height() - 1) * self.width + roi.x() - 1;
+                let bottom_right = bottom_left + roi.width();
+                mean = (self.int_img[bottom_right as usize] - self.int_img[bottom_left as usize]) as f64 / area;
+                m2 = (self.square_int_img[bottom_right as usize] - self.square_int_img[bottom_left as usize]) as f64 / area;
+            }
+            (_, _) => {
+                let top_left = (roi.y() - 1) * self.width + roi.x() - 1;
+                let top_right = top_left + roi.width();
+                let bottom_left = top_left + roi.height() * self.width;
+                let bottom_right = bottom_left + roi.width();
+                mean = (self.int_img[bottom_right as usize] - self.int_img[bottom_left as usize] +
+                    self.int_img[top_left as usize] - self.int_img[top_right as usize]) as f64 / area;
+                m2 = (self.square_int_img[bottom_right as usize] - self.square_int_img[bottom_left as usize] +
+                    self.square_int_img[top_left as usize] - self.square_int_img[top_right as usize]) as f64 / area;
+            }
+        }
+
+        (m2 - mean * mean).sqrt()
+    }
+
     pub fn compute(&mut self, input: *const u8, width: u32, height: u32) {
         if width == 0 || height == 0 {
             panic!(format!("Illegal arguments: width ({}), height ({})", width, height));
@@ -195,6 +235,22 @@ impl Rectangle {
             width: 0,
             height: 0
         }
+    }
+
+    pub fn x(&self) -> u32 {
+        self.x
+    }
+
+    pub fn y(&self) -> u32 {
+        self.y
+    }
+
+    pub fn width(&self) -> u32 {
+        self.width
+    }
+
+    pub fn height(&self) -> u32 {
+        self.height
     }
 }
 
