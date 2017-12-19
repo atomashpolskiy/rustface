@@ -1,17 +1,15 @@
 use feat::FeatureMap;
 use super::lab_boosted_classifier::LabBoostedClassifier;
 
-pub fn create_classifer(classifier_kind_id: i32) -> Box<Classifier> {
-    let classifier_kind = ClassifierKind::from(classifier_kind_id);
+pub fn create_classifer(classifier_kind: &ClassifierKind) -> Box<Classifier> {
     match classifier_kind {
-        Some(ClassifierKind::LabBoostedClassifier) => return Box::new(LabBoostedClassifier::new()),
-        Some(_) => panic!("Unsupported classifier kind: {:?}", classifier_kind),
-        None => panic!("Unexpected classifier kind id: {}", classifier_kind_id)
+        &ClassifierKind::LabBoostedClassifier => return Box::new(LabBoostedClassifier::new()),
+        _ => panic!("Unsupported classifier kind: {:?}", classifier_kind)
     }
 }
 
 #[derive(Debug)]
-enum ClassifierKind {
+pub enum ClassifierKind {
     LabBoostedClassifier,
     SurfMlp,
 }
