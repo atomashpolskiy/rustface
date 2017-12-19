@@ -1,13 +1,6 @@
 use feat::FeatureMap;
 use super::lab_boosted_classifier::LabBoostedClassifier;
 
-pub fn create_classifer(classifier_kind: &ClassifierKind) -> Box<Classifier> {
-    match classifier_kind {
-        &ClassifierKind::LabBoostedClassifier => return Box::new(LabBoostedClassifier::new()),
-        _ => panic!("Unsupported classifier kind: {:?}", classifier_kind)
-    }
-}
-
 #[derive(Debug)]
 pub enum ClassifierKind {
     LabBoostedClassifier,
