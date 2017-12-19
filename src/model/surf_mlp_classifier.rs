@@ -9,8 +9,13 @@ pub struct SurfMlpClassifier {
     layers: Vec<Layer>,
 }
 
-struct Layer {
+type ActFunc = Fn(f32) -> f32;
 
+struct Layer {
+    input_dim: i32,
+    weights: Vec<f32>,
+    biases: Vec<f32>,
+    act_func: Box<ActFunc>,
 }
 
 impl SurfMlpClassifier {
@@ -32,11 +37,33 @@ impl SurfMlpClassifier {
     }
 
     pub fn add_layer(&mut self, input_dim: i32, output_dim: i32, weights: Vec<f32>, biases: Vec<f32>) {
-
+        self.layers.push(
+            Layer {
+                input_dim, weights, biases,
+                act_func: Box::new(Self::relu)
+            }
+        )
     }
 
     pub fn add_output_layer(&mut self, input_dim: i32, output_dim: i32, weights: Vec<f32>, biases: Vec<f32>) {
+        self.layers.push(
+            Layer {
+                input_dim, weights, biases,
+                act_func: Box::new(Self::sigmoid)
+            }
+        )
+    }
 
+    fn relu(x: f32) -> f32 {
+        if x > 0f32 {
+            x
+        } else {
+            0f32
+        }
+    }
+
+    fn sigmoid(x: f32) -> f32 {
+        1f32 / (1f32 + (-x).exp())
     }
 }
 
