@@ -1,13 +1,16 @@
 mod classifier;
 mod lab_boosted_classifier;
+mod surf_mlp_classifier;
 
 use std::fs::File;
 use std::io;
 use std::io::{Cursor, Read};
 
-use byteorder::{ReadBytesExt, BigEndian, LittleEndian};
+use byteorder::{ReadBytesExt, LittleEndian};
 use self::classifier::{Classifier, ClassifierKind};
 use self::lab_boosted_classifier::LabBoostedClassifier;
+use self::surf_mlp_classifier::SurfMlpClassifier;
+
 use std::collections::HashMap;
 use feat::FeatureMap;
 use std::rc::Rc;
@@ -138,6 +141,10 @@ impl ModelReader {
             classifier.add_base_classifier(weights, thresh[i as usize]);
         }
 
+        Ok(())
+    }
+
+    fn read_surf_mlp_model(&mut self, classifier: &mut SurfMlpClassifier) -> Result<(), io::Error> {
         Ok(())
     }
 
