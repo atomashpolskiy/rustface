@@ -1,3 +1,6 @@
+use feat::FeatureMap;
+use super::classifier::{Classifier, Score};
+
 pub struct LabBoostedClassifier {
 
 }

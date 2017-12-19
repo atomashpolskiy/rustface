@@ -1,4 +1,7 @@
-fn create_classifer(classifier_kind_id: i32) -> Box<Classifier> {
+use feat::FeatureMap;
+use super::lab_boosted_classifier::LabBoostedClassifier;
+
+pub fn create_classifer(classifier_kind_id: i32) -> Box<Classifier> {
     let classifier_kind = ClassifierKind::from(classifier_kind_id);
     match classifier_kind {
         Some(ClassifierKind::LabBoostedClassifier) => return Box::new(LabBoostedClassifier::new()),
@@ -14,14 +17,18 @@ enum ClassifierKind {
 }
 
 impl ClassifierKind {
-    fn from(id: i32) -> Option<Self> {
-        use ClassifierKind::*;
+    pub fn from(id: i32) -> Option<Self> {
         match id {
-            1 => Some(LabBoostedClassifier),
-            2 => Some(SurfMlp),
+            1 => Some(ClassifierKind::LabBoostedClassifier),
+            2 => Some(ClassifierKind::SurfMlp),
             _ => None,
         }
     }
+}
+
+pub struct Score {
+    score: f32,
+    output: f32,
 }
 
 pub trait Classifier {

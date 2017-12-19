@@ -1,6 +1,11 @@
 mod classifier;
 mod lab_boosted_classifier;
 
+use std::fs::File;
+use std::io;
+use std::io::{Cursor, Read};
+
+use byteorder::{ReadBytesExt, BigEndian};
 
 pub trait ModelReader {
     fn read(&self, rdr: &mut Cursor<Vec<u8>>) -> Result<(), io::Error>;
@@ -32,7 +37,9 @@ fn load_model(path: &str) -> Result<Model, io::Error> {
 
             for k in 0..num_stage {
                 let classifier_kind_id = read_i32(&mut rdr)?;
-                let classifier = create_classifer(classifier_kind_id);
+                let classifier = classifier::create_classifer(classifier_kind_id);
+
+
             }
         }
     }
