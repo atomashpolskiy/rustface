@@ -1,8 +1,9 @@
-use feat::FeatureMap;
-use feat::surf_mlp_featmap::SurfMlpFeatureMap;
 use std::rc::Rc;
-use super::classifier::{Classifier, Score};
+
 use math;
+
+use super::{Classifier, Score};
+use feat::SurfMlpFeatureMap;
 
 pub struct SurfMlpClassifier {
     feature_map: Rc<SurfMlpFeatureMap>,

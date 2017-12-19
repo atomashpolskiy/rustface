@@ -1,7 +1,7 @@
-use feat::FeatureMap;
-use feat::lab_boosted_featmap::LabBoostedFeatureMap;
 use std::rc::Rc;
-use super::classifier::{Classifier, Score};
+
+use super::{Classifier, Score};
+use feat::LabBoostedFeatureMap;
 
 pub struct LabBoostedClassifier {
     feature_map: Rc<LabBoostedFeatureMap>,

@@ -1,23 +1,11 @@
-mod classifier;
-mod lab_boosted_classifier;
-mod surf_mlp_classifier;
-
 use std::fs::File;
 use std::io;
 use std::io::{Cursor, Read};
-use std::ops::DerefMut;
+use std::rc::Rc;
 
 use byteorder::{ReadBytesExt, LittleEndian};
-use self::classifier::{Classifier, ClassifierKind};
-use self::lab_boosted_classifier::LabBoostedClassifier;
-use self::surf_mlp_classifier::SurfMlpClassifier;
-
-use std::collections::HashMap;
-use feat::FeatureMap;
-use feat::lab_boosted_featmap::LabBoostedFeatureMap;
-use feat::surf_mlp_featmap::SurfMlpFeatureMap;
-use std::rc::Rc;
-use std::cell::RefCell;
+use classifier::{Classifier, ClassifierKind, LabBoostedClassifier, SurfMlpClassifier};
+use feat::{LabBoostedFeatureMap, SurfMlpFeatureMap};
 
 pub struct Model {
     classifiers: Vec<Box<Classifier>>,
@@ -112,7 +100,6 @@ impl ModelReader {
                 self.read_surf_mlp_model(&mut classifier)?;
                 Ok(Box::new(classifier))
             },
-            _ => panic!("Unsupported classifier kind: {:?}", classifier_kind)
         }
     }
 

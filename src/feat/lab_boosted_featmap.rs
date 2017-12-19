@@ -1,7 +1,6 @@
-use super::FeatureMap;
-
-use common::Rectangle;
 use math;
+use common::Rectangle;
+use feat::FeatureMap;
 
 pub struct LabBoostedFeatureMap {
     roi: Option<Rectangle>,
