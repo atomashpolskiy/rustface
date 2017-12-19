@@ -80,7 +80,7 @@ impl FeaturePool {
                     if w % format.num_cell_per_row != 0 || w < self.patch_min_width || w > self.sample_width {
                         continue;
                     }
-                    feature_vecs.push(self.collect_features(w, h, format.num_cell_per_row, format.num_cell_per_col));
+                    self.collect_features(w, h, format.num_cell_per_row, format.num_cell_per_col, &mut feature_vecs);
                     h += self.patch_size_inc_step;
                 }
             }
@@ -97,29 +97,24 @@ impl FeaturePool {
                     if h % format.num_cell_per_col != 0 || h < self.patch_min_height || h > self.sample_height {
                         continue;
                     }
-                    feature_vecs.push(self.collect_features(w, h, format.num_cell_per_row, format.num_cell_per_col));
+                    self.collect_features(w, h, format.num_cell_per_row, format.num_cell_per_col, &mut feature_vecs);
                     w += self.patch_size_inc_step;
                 }
             }
         }
 
-        for ref mut vec in feature_vecs.into_iter() {
-            self.features.append(vec);
-        }
+        self.features.append(&mut feature_vecs);
     }
 
-    fn collect_features(&self, width: u32, height: u32, num_cell_per_row: u32, num_cell_per_col: u32) -> Vec<Feature> {
+    fn collect_features(&self, width: u32, height: u32, num_cell_per_row: u32, num_cell_per_col: u32, dest: &mut Vec<Feature>) {
         let y_lim = self.sample_height - height;
         let x_lim = self.sample_width - width;
-
-        let capacity = (y_lim / self.patch_move_step_y) * (x_lim / self.patch_move_step_y) + 2;
-        let mut features = Vec::with_capacity(capacity as usize);
 
         let mut y = 0;
         while y <= y_lim {
             let mut x = 0;
             while x <= x_lim {
-                features.push(
+                dest.push(
                     Feature {
                         patch: Rectangle::new(x, y, width, height),
                         num_cell_per_row, num_cell_per_col
@@ -129,8 +124,6 @@ impl FeaturePool {
             }
             y += self.patch_move_step_y;
         }
-
-        features
     }
 }
 
