@@ -6,13 +6,8 @@ pub struct Rectangle {
 }
 
 impl Rectangle {
-    pub fn new() -> Self {
-        Rectangle {
-            x: 0,
-            y: 0,
-            width: 0,
-            height: 0
-        }
+    pub fn new(x: u32, y: u32, width: u32, height: u32) -> Self {
+        Rectangle { x, y, width, height }
     }
 
     pub fn x(&self) -> u32 {
