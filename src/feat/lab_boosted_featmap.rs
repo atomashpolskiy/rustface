@@ -6,7 +6,6 @@ pub struct LabBoostedFeatureMap {
     roi: Option<Rectangle>,
     width: u32,
     height: u32,
-    // LABFeatureMap specifics
     length: usize,
     feat_map: Vec<u8>,
     rect_sum: Vec<i32>,
