@@ -5,7 +5,7 @@ use std::fs::File;
 use std::io;
 use std::io::{Cursor, Read};
 
-use byteorder::{ReadBytesExt, BigEndian};
+use byteorder::{ReadBytesExt, BigEndian, LittleEndian};
 use self::classifier::{Classifier, ClassifierKind};
 use self::lab_boosted_classifier::LabBoostedClassifier;
 use std::collections::HashMap;
@@ -54,18 +54,22 @@ impl ModelReader {
         let mut hierarchy_sizes = Vec::with_capacity(num_hierarchy as usize);
         let mut num_stages = Vec::with_capacity(hierarchy_sizes.len() * 4);
 
+        println!("num hierarchy: {}", num_hierarchy);
         for _ in 0..num_hierarchy {
             let hierarchy_size = self.read_i32()?;
             hierarchy_sizes.push(hierarchy_size);
 
+            println!("hierarchy size: {}", hierarchy_size);
             for _ in 0..hierarchy_size {
                 let num_stage = self.read_i32()?;
                 num_stages.push(num_stage);
 
+                println!("num stage: {}", num_stage);
                 for _ in 0..num_stage {
                     let classifier_kind_id = self.read_i32()?;
                     let classifier_kind = ClassifierKind::from(classifier_kind_id);
 
+                    println!("classifier kind id: {}", classifier_kind_id);
                     match classifier_kind {
                         Some(classifier_kind) => {
                             model.classifiers.push(self.create_classifer(classifier_kind)?);
@@ -75,11 +79,15 @@ impl ModelReader {
                 }
 
                 let num_wnd_src = self.read_i32()?;
-                let mut num_wnd_vec = Vec::with_capacity(num_wnd_src as usize);
+                println!("num wnd src: {}", num_wnd_src);
+                let mut num_wnd_vec;
                 if num_wnd_src > 0 {
+                    num_wnd_vec = Vec::with_capacity(num_wnd_src as usize);
                     for _ in 0..num_wnd_src {
                         num_wnd_vec.push(self.read_i32()?);
                     }
+                } else {
+                    num_wnd_vec = vec![];
                 }
                 model.wnd_src_id.push(num_wnd_vec);
             }
@@ -108,6 +116,9 @@ impl ModelReader {
         let num_base_classifier = self.read_i32()?;
         let num_bin = self.read_i32()?;
 
+        println!("num base classifier: {}", num_base_classifier);
+        println!("num base classifier as usize: {}", num_base_classifier as usize);
+        println!("num bin: {}", num_bin);
         for _ in 0..num_base_classifier {
             let x = self.read_i32()?;
             let y = self.read_i32()?;
@@ -131,11 +142,11 @@ impl ModelReader {
     }
 
     fn read_i32(&mut self) -> Result<i32, io::Error> {
-        self.reader.read_i32::<BigEndian>()
+        self.reader.read_i32::<LittleEndian>()
     }
 
     fn read_f32(&mut self) -> Result<f32, io::Error> {
-        self.reader.read_f32::<BigEndian>()
+        self.reader.read_f32::<LittleEndian>()
     }
 }
 
