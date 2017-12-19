@@ -26,7 +26,7 @@ impl Model {
     }
 }
 
-fn load_model(path: &str) -> Result<Model, io::Error> {
+pub fn load_model(path: &str) -> Result<Model, io::Error> {
     let mut buf = vec![];
     File::open(path).map(|mut file|
         file.read_to_end(&mut buf)

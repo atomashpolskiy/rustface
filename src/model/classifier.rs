@@ -10,8 +10,8 @@ pub enum ClassifierKind {
 impl ClassifierKind {
     pub fn from(id: i32) -> Option<Self> {
         match id {
-            1 => Some(ClassifierKind::LabBoostedClassifier),
-            2 => Some(ClassifierKind::SurfMlp),
+            0 => Some(ClassifierKind::LabBoostedClassifier),
+            1 => Some(ClassifierKind::SurfMlp),
             _ => None,
         }
     }

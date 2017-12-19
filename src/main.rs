@@ -1,3 +1,7 @@
+extern crate rustface;
+
+use rustface::model;
+
 fn main() {
-    println!("Hello, world!");
+    model::load_model("seeta_fd_frontal_v1.0.bin").unwrap();
 }
