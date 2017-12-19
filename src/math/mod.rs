@@ -37,6 +37,14 @@ unsafe fn apply<F>(op: &mut F, left: *const i32, right: *const i32, dest: *mut i
     op(left, right, dest);
 }
 
+pub unsafe fn vector_inner_product(left: *const f32, right: *const f32, length: usize) -> f32 {
+    let mut product = 0f32;
+    for i in 0..length as isize {
+        product += (*left.offset(i)) * (*right.offset(i));
+    }
+    product
+}
+
 #[cfg(test)]
 mod tests {
 

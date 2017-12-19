@@ -1,21 +1,13 @@
 use feat::FeatureMap;
 use std::rc::Rc;
 use super::classifier::{Classifier, Score};
+use math;
 
 pub struct SurfMlpClassifier {
     feature_map: Rc<FeatureMap>,
     feature_ids: Vec<i32>,
     thresh: f32,
     layers: Vec<Layer>,
-}
-
-type ActFunc = Fn(f32) -> f32;
-
-struct Layer {
-    input_dim: i32,
-    weights: Vec<f32>,
-    biases: Vec<f32>,
-    act_func: Box<ActFunc>,
 }
 
 impl SurfMlpClassifier {
@@ -64,6 +56,32 @@ impl SurfMlpClassifier {
 
     fn sigmoid(x: f32) -> f32 {
         1f32 / (1f32 + (-x).exp())
+    }
+}
+
+type ActFunc = Fn(f32) -> f32;
+
+struct Layer {
+    input_dim: i32,
+    weights: Vec<f32>,
+    biases: Vec<f32>,
+    act_func: Box<ActFunc>,
+}
+
+impl Layer {
+    fn compute(&self, input: &Vec<f32>, output: &mut Vec<f32>) {
+        let input_dim = self.input_dim as usize;
+        let output_dim = self.biases.len();
+        for i in 0..output_dim as usize {
+            let x;
+            unsafe {
+                x = math::vector_inner_product(
+                    input.as_ptr(),
+                    self.weights.as_ptr().offset((i * input_dim) as isize),
+                    input_dim);
+            }
+            output[i] = (self.act_func)(x);
+        }
     }
 }
 
