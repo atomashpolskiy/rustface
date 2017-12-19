@@ -8,6 +8,9 @@ use std::io::{Cursor, Read};
 use byteorder::{ReadBytesExt, BigEndian};
 use self::classifier::{Classifier, ClassifierKind};
 use self::lab_boosted_classifier::LabBoostedClassifier;
+use std::collections::HashMap;
+use feat::FeatureMap;
+use std::rc::Rc;
 
 pub struct Model {
     classifiers: Vec<Box<Classifier>>,
@@ -33,6 +36,7 @@ fn load_model(path: &str) -> Result<Model, io::Error> {
     let num_hierarchy = read_i32(&mut rdr)?;
     let mut hierarchy_sizes = Vec::with_capacity(num_hierarchy as usize);
     let mut num_stages = Vec::with_capacity(hierarchy_sizes.len() * 4);
+    let mut featmaps_by_classifier_kind: HashMap<ClassifierKind, Rc<FeatureMap>> = HashMap::new();
 
     for i in 0..num_hierarchy {
         let hierarchy_size = read_i32(&mut rdr)?;
@@ -47,7 +51,7 @@ fn load_model(path: &str) -> Result<Model, io::Error> {
                 let classifier_kind = ClassifierKind::from(classifier_kind_id);
 
                 match classifier_kind {
-                    Some(ref classifier_kind) => {
+                    Some(classifier_kind) => {
                         model.classifiers.push(create_classifer(classifier_kind, &mut rdr)?);
                     },
                     None => panic!("Unexpected classifier kind id: {}", classifier_kind_id)
@@ -66,9 +70,9 @@ fn load_model(path: &str) -> Result<Model, io::Error> {
     Ok(model)
 }
 
-fn create_classifer(classifier_kind: &ClassifierKind, mut rdr: &mut Cursor<Vec<u8>>) -> Result<Box<Classifier>, io::Error> {
+fn create_classifer(classifier_kind: ClassifierKind, mut rdr: &mut Cursor<Vec<u8>>) -> Result<Box<Classifier>, io::Error> {
     match classifier_kind {
-        &ClassifierKind::LabBoostedClassifier => {
+        ClassifierKind::LabBoostedClassifier => {
             let mut classifier = LabBoostedClassifier::new();
             read_lab_boosted_model(&mut rdr, &mut classifier)?;
             Ok(Box::new(classifier))

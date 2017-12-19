@@ -1,7 +1,7 @@
 use feat::FeatureMap;
 use super::lab_boosted_classifier::LabBoostedClassifier;
 
-#[derive(Debug)]
+#[derive(Debug, Hash, PartialEq, Eq)]
 pub enum ClassifierKind {
     LabBoostedClassifier,
     SurfMlp,
