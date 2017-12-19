@@ -3,14 +3,14 @@ use super::lab_boosted_classifier::LabBoostedClassifier;
 
 #[derive(Debug, Hash, PartialEq, Eq)]
 pub enum ClassifierKind {
-    LabBoostedClassifier,
+    LabBoosted,
     SurfMlp,
 }
 
 impl ClassifierKind {
     pub fn from(id: i32) -> Option<Self> {
         match id {
-            0 => Some(ClassifierKind::LabBoostedClassifier),
+            0 => Some(ClassifierKind::LabBoosted),
             1 => Some(ClassifierKind::SurfMlp),
             _ => None,
         }
