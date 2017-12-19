@@ -1,7 +1,7 @@
 use feat::FeatureMap;
 use super::lab_boosted_classifier::LabBoostedClassifier;
 
-#[derive(Debug, Hash, PartialEq, Eq)]
+#[derive(Debug, Hash, PartialEq, Eq, Clone)]
 pub enum ClassifierKind {
     LabBoosted,
     SurfMlp,
@@ -18,10 +18,10 @@ impl ClassifierKind {
 }
 
 pub struct Score {
+    positive: bool,
     score: f32,
-    output: f32,
 }
 
 pub trait Classifier {
-    fn classify(&self, features: FeatureMap) -> Option<Score>;
+    fn classify(&self, output: &mut Vec<f32>) -> Option<Score>;
 }

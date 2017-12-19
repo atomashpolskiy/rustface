@@ -14,6 +14,8 @@ use self::surf_mlp_classifier::SurfMlpClassifier;
 
 use std::collections::HashMap;
 use feat::FeatureMap;
+use feat::lab_boosted_featmap::LabBoostedFeatureMap;
+use feat::surf_mlp_featmap::SurfMlpFeatureMap;
 use std::rc::Rc;
 use std::cell::RefCell;
 
@@ -41,14 +43,16 @@ pub fn load_model(path: &str) -> Result<Model, io::Error> {
 
 struct ModelReader {
     reader: Cursor<Vec<u8>>,
-    featmaps_by_classifier_kind: HashMap<ClassifierKind, Rc<FeatureMap>>,
+    lab_boosted_feature_map: Rc<LabBoostedFeatureMap>,
+    surf_mlp_feature_map: Rc<SurfMlpFeatureMap>,
 }
 
 impl ModelReader {
     fn new(buf: Vec<u8>) -> Self {
         ModelReader {
             reader: Cursor::new(buf),
-            featmaps_by_classifier_kind: HashMap::new()
+            lab_boosted_feature_map: Rc::new(LabBoostedFeatureMap::new()),
+            surf_mlp_feature_map: Rc::new(SurfMlpFeatureMap::new()),
         }
     }
 
@@ -99,30 +103,17 @@ impl ModelReader {
     fn create_classifier(&mut self, classifier_kind: ClassifierKind) -> Result<Box<Classifier>, io::Error> {
         match classifier_kind {
             ClassifierKind::LabBoosted => {
-                let mut classifier;
-                {
-                    let feature_map = self.get_or_create_feature_map(classifier_kind);
-                    classifier = LabBoostedClassifier::new(Rc::clone(feature_map));
-                }
+                let mut classifier = LabBoostedClassifier::new(Rc::clone(&self.lab_boosted_feature_map));
                 self.read_lab_boosted_model(&mut classifier)?;
                 Ok(Box::new(classifier))
             },
             ClassifierKind::SurfMlp => {
-                let mut classifier;
-                {
-                    let feature_map = self.get_or_create_feature_map(classifier_kind);
-                    classifier = SurfMlpClassifier::new(Rc::clone(feature_map));
-                }
+                let mut classifier = SurfMlpClassifier::new(Rc::clone(&self.surf_mlp_feature_map));
                 self.read_surf_mlp_model(&mut classifier)?;
                 Ok(Box::new(classifier))
-            }
+            },
             _ => panic!("Unsupported classifier kind: {:?}", classifier_kind)
         }
-    }
-
-    fn get_or_create_feature_map<'a>(&'a mut self, classifier_kind: ClassifierKind) -> &'a mut Rc<FeatureMap> {
-        self.featmaps_by_classifier_kind.entry(classifier_kind)
-            .or_insert_with(|| Rc::new(FeatureMap::new()))
     }
 
     fn read_lab_boosted_model(&mut self, classifier: &mut LabBoostedClassifier) -> Result<(), io::Error> {

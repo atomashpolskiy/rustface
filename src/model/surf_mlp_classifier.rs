@@ -1,17 +1,18 @@
 use feat::FeatureMap;
+use feat::surf_mlp_featmap::SurfMlpFeatureMap;
 use std::rc::Rc;
 use super::classifier::{Classifier, Score};
 use math;
 
 pub struct SurfMlpClassifier {
-    feature_map: Rc<FeatureMap>,
+    feature_map: Rc<SurfMlpFeatureMap>,
     feature_ids: Vec<i32>,
     thresh: f32,
     layers: Vec<Layer>,
 }
 
 impl SurfMlpClassifier {
-    pub fn new(feature_map: Rc<FeatureMap>) -> Self {
+    pub fn new(feature_map: Rc<SurfMlpFeatureMap>) -> Self {
         SurfMlpClassifier {
             feature_map,
             feature_ids: vec![],
@@ -86,7 +87,7 @@ impl Layer {
 }
 
 impl Classifier for SurfMlpClassifier {
-    fn classify(&self, features: FeatureMap) -> Option<Score> {
+    fn classify(&self, output: &mut Vec<f32>) -> Option<Score> {
         unimplemented!()
     }
 }
