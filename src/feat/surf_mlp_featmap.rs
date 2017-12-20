@@ -223,7 +223,7 @@ impl SurfMlpFeatureMap {
         }
     }
 
-    fn compute_feature_vector(&self, feature: &Feature, feature_vec: *mut i32) {
+    unsafe fn compute_feature_vector(&self, feature: &Feature, feature_vec: *mut i32) {
         let roi = self.roi.as_ref().unwrap();
         let init_cell_x = roi.x() + feature.patch.x();
         let init_cell_y = roi.y() + feature.patch.y();
@@ -239,146 +239,160 @@ impl SurfMlpFeatureMap {
         let int_img_ptr = self.int_img.as_ptr();
         let mut offset: isize = 0;
 
-        unsafe {
-            match (init_cell_x, init_cell_y) {
-                (0, 0) => {
-                    offset = row_width * (cell_height - 1) + cell_width - k_num_int_channel;
-                    for i in 0..k_num_int_channel as usize {
-                        cell_bottom_right[i] = int_img_ptr.offset(offset);
-                        offset += 1;
-                        *feature_value = *cell_bottom_right[i];
+        match (init_cell_x, init_cell_y) {
+            (0, 0) => {
+                offset = row_width * (cell_height - 1) + cell_width - k_num_int_channel;
+                for i in 0..k_num_int_channel as usize {
+                    cell_bottom_right[i] = int_img_ptr.offset(offset);
+                    offset += 1;
+                    *feature_value = *cell_bottom_right[i];
+                    feature_value = feature_value.offset(1);
+                    cell_top_right[i] = cell_bottom_right[i];
+                }
+
+                for i in 1..feature.num_cell_per_row {
+                    for j in 0..k_num_int_channel as usize {
+                        cell_bottom_left[j] = cell_bottom_right[j];
+                        cell_bottom_right[j] = cell_bottom_right[j].offset(cell_width);
+                        *feature_value = *cell_bottom_right[j] - *cell_bottom_left[j];
                         feature_value = feature_value.offset(1);
-                        cell_top_right[i] = cell_bottom_right[i];
-                    }
-
-                    for i in 1..feature.num_cell_per_row {
-                        for j in 0..k_num_int_channel as usize {
-                            cell_bottom_left[j] = cell_bottom_right[j];
-                            cell_bottom_right[j] = cell_bottom_right[j].offset(cell_width);
-                            *feature_value = *cell_bottom_right[j] - *cell_bottom_left[j];
-                            feature_value = feature_value.offset(1);
-                        }
-                    }
-                },
-                (_, 0) => {
-                    offset = row_width * (cell_height - 1) + (init_cell_x - 1) as isize * k_num_int_channel;
-                    for i in 0..k_num_int_channel as usize {
-                        cell_bottom_left[i] = int_img_ptr.offset(offset);
-                        offset += 1;
-                        cell_bottom_right[i] = cell_bottom_left[i].offset(cell_width);
-                        *feature_value = *cell_bottom_right[i] - *cell_bottom_left[i];
-                        feature_value = feature_value.offset(1);
-                        cell_top_right[i] = cell_bottom_right[i];
-                    }
-
-                    for i in 1..feature.num_cell_per_row {
-                        for j in 0..k_num_int_channel as usize {
-                            cell_bottom_left[j] = cell_bottom_right[j];
-                            cell_bottom_right[j] = cell_bottom_right[j].offset(cell_width);
-                            *feature_value = *cell_bottom_right[j] - *cell_bottom_left[j];
-                            feature_value = feature_value.offset(1);
-                        }
-                    }
-                },
-                (0, _) => {
-                    let mut tmp_cell_top_right: Vec<*const i32> = Vec::with_capacity(k_num_int_channel as usize);
-
-                    offset = row_width * ((init_cell_y - 1) as isize) + cell_width - k_num_int_channel;
-                    for i in 0..k_num_int_channel as usize {
-                        cell_top_right[i] = int_img_ptr.offset(offset);
-                        offset += 1;
-                        cell_bottom_right[i] = cell_top_right[i].offset(row_width * cell_height);
-                        tmp_cell_top_right[i] = cell_bottom_right[i];
-                        *feature_value = *cell_bottom_right[i] - *cell_top_right[i];
-                        feature_value = feature_value.offset(1);
-                    }
-
-                    for i in 1..feature.num_cell_per_row {
-                        for j in 0..k_num_int_channel as usize {
-                            cell_top_left[j] = cell_top_right[j];
-                            cell_top_right[j] = cell_top_right[j].offset(cell_width);
-                            cell_bottom_left[j] = cell_bottom_right[j];
-                            cell_bottom_right[j] = cell_bottom_right[j].offset(cell_width);
-                            *feature_value = *cell_bottom_right[j] + *cell_top_left[j] - *cell_top_right[j] - *cell_bottom_left[j];
-                            feature_value = feature_value.offset(1);
-                        }
-                    }
-
-                    for i in 0..k_num_int_channel as usize {
-                        cell_top_right[i] = tmp_cell_top_right[i];
-                    }
-                },
-                (_, _) => {
-                    let mut tmp_cell_top_right: Vec<*const i32> = Vec::with_capacity(k_num_int_channel as usize);
-
-                    offset = row_width * ((init_cell_y - 1) as isize) + (init_cell_x - 1) as isize * k_num_int_channel;
-                    for i in 0..k_num_int_channel as usize {
-                        cell_top_left[i] = int_img_ptr.offset(offset);
-                        offset += 1;
-                        cell_top_right[i] = cell_top_left[i].offset(cell_width);
-                        cell_bottom_left[i] = cell_top_left[i].offset(row_width * cell_height);
-                        cell_bottom_right[i] = cell_bottom_left[i].offset(cell_width);
-                        *feature_value = *cell_bottom_right[i] + *cell_top_left[i] - *cell_top_right[i] - *cell_bottom_left[i];
-                        feature_value = feature_value.offset(1);
-                        tmp_cell_top_right[i] = cell_bottom_right[i];
-                    }
-
-                    for i in 1..feature.num_cell_per_row {
-                        for j in 0..k_num_int_channel as usize {
-                            cell_top_left[j] = cell_top_right[j];
-                            cell_top_right[j] = cell_top_right[j].offset(cell_width);
-                            cell_bottom_left[j] = cell_bottom_right[j];
-                            cell_bottom_right[j] = cell_bottom_right[j].offset(cell_width);
-                            *feature_value = *cell_bottom_right[j] + *cell_top_left[j] - *cell_top_right[j] - *cell_bottom_left[j];
-                            feature_value = feature_value.offset(1);
-                        }
-                    }
-
-                    for i in 0..k_num_int_channel as usize {
-                        cell_top_right[i] = tmp_cell_top_right[i];
                     }
                 }
-            }
+            },
+            (_, 0) => {
+                offset = row_width * (cell_height - 1) + (init_cell_x - 1) as isize * k_num_int_channel;
+                for i in 0..k_num_int_channel as usize {
+                    cell_bottom_left[i] = int_img_ptr.offset(offset);
+                    offset += 1;
+                    cell_bottom_right[i] = cell_bottom_left[i].offset(cell_width);
+                    *feature_value = *cell_bottom_right[i] - *cell_bottom_left[i];
+                    feature_value = feature_value.offset(1);
+                    cell_top_right[i] = cell_bottom_right[i];
+                }
 
-            offset = cell_height * row_width - feature.patch.width() as isize * k_num_int_channel + cell_width;
-            for i in 1..feature.num_cell_per_row {
-                if init_cell_x == 0 {
+                for i in 1..feature.num_cell_per_row {
                     for j in 0..k_num_int_channel as usize {
-                        cell_bottom_right[j] = cell_bottom_right[j].offset(offset);
-                        *feature_value = *cell_bottom_right[j] - *cell_top_right[j];
+                        cell_bottom_left[j] = cell_bottom_right[j];
+                        cell_bottom_right[j] = cell_bottom_right[j].offset(cell_width);
+                        *feature_value = *cell_bottom_right[j] - *cell_bottom_left[j];
                         feature_value = feature_value.offset(1);
                     }
-                } else {
+                }
+            },
+            (0, _) => {
+                let mut tmp_cell_top_right: Vec<*const i32> = Vec::with_capacity(k_num_int_channel as usize);
+
+                offset = row_width * ((init_cell_y - 1) as isize) + cell_width - k_num_int_channel;
+                for i in 0..k_num_int_channel as usize {
+                    cell_top_right[i] = int_img_ptr.offset(offset);
+                    offset += 1;
+                    cell_bottom_right[i] = cell_top_right[i].offset(row_width * cell_height);
+                    tmp_cell_top_right[i] = cell_bottom_right[i];
+                    *feature_value = *cell_bottom_right[i] - *cell_top_right[i];
+                    feature_value = feature_value.offset(1);
+                }
+
+                for i in 1..feature.num_cell_per_row {
                     for j in 0..k_num_int_channel as usize {
-                        cell_bottom_right[j] = cell_bottom_right[j].offset(offset);
-                        cell_top_left[j] = cell_top_right[j].offset(-cell_width);
-                        cell_bottom_left[j] = cell_bottom_right[j].offset(-cell_width);
+                        cell_top_left[j] = cell_top_right[j];
+                        cell_top_right[j] = cell_top_right[j].offset(cell_width);
+                        cell_bottom_left[j] = cell_bottom_right[j];
+                        cell_bottom_right[j] = cell_bottom_right[j].offset(cell_width);
                         *feature_value = *cell_bottom_right[j] + *cell_top_left[j] - *cell_top_right[j] - *cell_bottom_left[j];
                         feature_value = feature_value.offset(1);
                     }
                 }
 
-                for j in 1..feature.num_cell_per_row {
-                    for k in 0..k_num_int_channel as usize {
-                        cell_top_left[k] = cell_top_right[k];
-                        cell_top_right[k] = cell_top_right[k].offset(cell_width);
-                        cell_bottom_left[k] = cell_bottom_right[k];
-                        cell_bottom_right[k] = cell_bottom_right[k].offset(cell_width);
-                        *feature_value = *cell_bottom_right[k] + *cell_top_left[k] - *cell_bottom_left[k] - *cell_top_right[k];
+                for i in 0..k_num_int_channel as usize {
+                    cell_top_right[i] = tmp_cell_top_right[i];
+                }
+            },
+            (_, _) => {
+                let mut tmp_cell_top_right: Vec<*const i32> = Vec::with_capacity(k_num_int_channel as usize);
+
+                offset = row_width * ((init_cell_y - 1) as isize) + (init_cell_x - 1) as isize * k_num_int_channel;
+                for i in 0..k_num_int_channel as usize {
+                    cell_top_left[i] = int_img_ptr.offset(offset);
+                    offset += 1;
+                    cell_top_right[i] = cell_top_left[i].offset(cell_width);
+                    cell_bottom_left[i] = cell_top_left[i].offset(row_width * cell_height);
+                    cell_bottom_right[i] = cell_bottom_left[i].offset(cell_width);
+                    *feature_value = *cell_bottom_right[i] + *cell_top_left[i] - *cell_top_right[i] - *cell_bottom_left[i];
+                    feature_value = feature_value.offset(1);
+                    tmp_cell_top_right[i] = cell_bottom_right[i];
+                }
+
+                for i in 1..feature.num_cell_per_row {
+                    for j in 0..k_num_int_channel as usize {
+                        cell_top_left[j] = cell_top_right[j];
+                        cell_top_right[j] = cell_top_right[j].offset(cell_width);
+                        cell_bottom_left[j] = cell_bottom_right[j];
+                        cell_bottom_right[j] = cell_bottom_right[j].offset(cell_width);
+                        *feature_value = *cell_bottom_right[j] + *cell_top_left[j] - *cell_top_right[j] - *cell_bottom_left[j];
                         feature_value = feature_value.offset(1);
                     }
                 }
 
-                for j in 0..k_num_int_channel as usize {
-                    cell_top_right[j] = cell_top_right[j].offset(offset);
+                for i in 0..k_num_int_channel as usize {
+                    cell_top_right[i] = tmp_cell_top_right[i];
                 }
+            }
+        }
+
+        offset = cell_height * row_width - feature.patch.width() as isize * k_num_int_channel + cell_width;
+        for i in 1..feature.num_cell_per_row {
+            if init_cell_x == 0 {
+                for j in 0..k_num_int_channel as usize {
+                    cell_bottom_right[j] = cell_bottom_right[j].offset(offset);
+                    *feature_value = *cell_bottom_right[j] - *cell_top_right[j];
+                    feature_value = feature_value.offset(1);
+                }
+            } else {
+                for j in 0..k_num_int_channel as usize {
+                    cell_bottom_right[j] = cell_bottom_right[j].offset(offset);
+                    cell_top_left[j] = cell_top_right[j].offset(-cell_width);
+                    cell_bottom_left[j] = cell_bottom_right[j].offset(-cell_width);
+                    *feature_value = *cell_bottom_right[j] + *cell_top_left[j] - *cell_top_right[j] - *cell_bottom_left[j];
+                    feature_value = feature_value.offset(1);
+                }
+            }
+
+            for j in 1..feature.num_cell_per_row {
+                for k in 0..k_num_int_channel as usize {
+                    cell_top_left[k] = cell_top_right[k];
+                    cell_top_right[k] = cell_top_right[k].offset(cell_width);
+                    cell_bottom_left[k] = cell_bottom_right[k];
+                    cell_bottom_right[k] = cell_bottom_right[k].offset(cell_width);
+                    *feature_value = *cell_bottom_right[k] + *cell_top_left[k] - *cell_bottom_left[k] - *cell_top_right[k];
+                    feature_value = feature_value.offset(1);
+                }
+            }
+
+            for j in 0..k_num_int_channel as usize {
+                cell_top_right[j] = cell_top_right[j].offset(offset);
             }
         }
     }
 
-    /*
+    unsafe fn normalize_feature_vector(feature_vec: *const i32, feature_vec_normalized: *mut f32, length: i32) {
+        let mut prod = 0f64;
 
-    */
+        for i in 0..length as isize {
+            let value = *feature_vec.offset(i);
+            prod += (value * value) as f64;
+        }
+
+        if prod != 0f64 {
+            let norm = prod.sqrt() as f32;
+            for i in 0..length as isize {
+                *feature_vec_normalized.offset(i) = *feature_vec.offset(i) as f32 / norm;
+            }
+        } else {
+            for i in 0..length as isize {
+                *feature_vec_normalized.offset(i) = 0f32;
+            }
+        }
+    }
 }
 
 struct FeaturePool {
