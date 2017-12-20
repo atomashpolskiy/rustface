@@ -2,6 +2,8 @@ use common::Rectangle;
 use feat::FeatureMap;
 use math;
 
+use std::ptr;
+
 pub struct SurfMlpFeatureMap {
     roi: Option<Rectangle>,
     width: u32,
@@ -374,7 +376,27 @@ impl SurfMlpFeatureMap {
         }
     }
 
-    unsafe fn normalize_feature_vector(feature_vec: *const i32, feature_vec_normalized: *mut f32, length: i32) {
+    unsafe fn get_feature_vector(&mut self, feature_id: usize, feature_vec: *mut f32) {
+        if !self.feature_valid_indicators[feature_id] {
+            let feature = self.feature_pool.get_feature(feature_id);
+            let feature_vec = self.feature_vectors[feature_id].as_mut_ptr();
+            self.compute_feature_vector(feature, feature_vec);
+
+            let feature_vec = self.feature_vectors[feature_id].as_ptr();
+            let feature_vec_normalized = self.feature_vectors_normalized[feature_id].as_mut_ptr();
+            let length = self.feature_vectors_normalized[feature_id].len();
+            SurfMlpFeatureMap::normalize_feature_vector(feature_vec, feature_vec_normalized, length);
+
+            self.feature_valid_indicators[feature_id] = true;
+            self.buf_valid_reset = true;
+        }
+
+        let feature_vec_normalized = self.feature_vectors_normalized[feature_id].as_ptr();
+        let length = self.feature_vectors_normalized[feature_id].len();
+        ptr::copy_nonoverlapping(feature_vec_normalized, feature_vec, length);
+    }
+
+    unsafe fn normalize_feature_vector(feature_vec: *const i32, feature_vec_normalized: *mut f32, length: usize) {
         let mut prod = 0f64;
 
         for i in 0..length as isize {
@@ -492,6 +514,10 @@ impl FeaturePool {
 
     fn size(&self) -> usize {
         self.features.len()
+    }
+
+    fn get_feature<'a>(&'a self, feature_id: usize) -> &'a Feature {
+        &self.features[feature_id]
     }
 
     fn get_feature_vector_dim(&self, feature_id: usize) -> usize {
