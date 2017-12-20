@@ -11,6 +11,13 @@ pub unsafe fn square(src: *const i32, dest: *mut i32, length: usize) {
     }
 }
 
+pub unsafe fn abs(src: *const i32, dest: *mut i32, length: usize) {
+    for i in 0..length as isize {
+        let value = *src.offset(i);
+        *dest.offset(i) = if value >= 0 { value } else { -value };
+    }
+}
+
 pub unsafe fn vector_add(left: *const i32, right: *const i32, dest: *mut i32, length: usize) {
     apply_for_range(
         &mut |x, y, z| *z = *x + *y,
