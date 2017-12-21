@@ -7,15 +7,53 @@ mod classifier;
 pub mod model;
 
 use std::{cmp, ptr};
-use common::{ImageData, ImagePyramid, Rectangle};
+use common::{FaceInfo, ImageData, ImagePyramid, Rectangle};
 
-struct DetectorImpl {
+trait Detector {
+    fn detect(&mut self, image: &ImagePyramid) -> Vec<FaceInfo>;
+}
+
+struct FuStDetector {
     wnd_data_buf: Vec<u8>,
     wnd_data: Vec<u8>,
     wnd_size: u32,
+    slide_wnd_step_x: i32,
+    slide_wnd_step_y: i32,
+    num_hierarchy: u32,
 }
 
-impl DetectorImpl {
+impl FuStDetector {
+    fn new() -> Self {
+        let wnd_size = 40;
+        let slide_wnd_step_x = 4;
+        let slide_wnd_step_y = 4;
+        let num_hierarchy = 0;
+
+        FuStDetector {
+            wnd_data_buf: Vec::with_capacity((wnd_size * wnd_size) as usize),
+            wnd_data: Vec::with_capacity((wnd_size * wnd_size) as usize),
+            wnd_size,
+            slide_wnd_step_x,
+            slide_wnd_step_y,
+            num_hierarchy,
+        }
+    }
+
+    fn set_window_size(&mut self, wnd_size: u32) {
+        if size >= 20 {
+            self.wnd_size = wnd_size;
+        }
+    }
+
+    fn set_slide_window_step(&mut self, step_x: i32, step_y: i32) {
+        if step_x > 0 {
+            self.slide_wnd_step_x = step_x;
+        }
+        if step_y > 0 {
+            self.slide_wnd_step_y = step_y;
+        }
+    }
+
     fn get_window_data(&mut self, img: &ImageData, wnd: &mut Rectangle) {
         let mut roi = wnd;
 
