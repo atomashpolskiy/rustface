@@ -72,19 +72,19 @@ impl SurfMlpClassifier {
         self.thresh = thresh;
     }
 
-    pub fn add_layer(&mut self, input_dim: i32, output_dim: i32, weights: Vec<f32>, biases: Vec<f32>) {
+    pub fn add_layer(&mut self, input_dim: usize, output_dim: usize, weights: Vec<f32>, biases: Vec<f32>) {
         self.layers.push(
             Layer {
-                input_dim, weights, biases,
+                input_dim, output_dim, weights, biases,
                 act_func: Box::new(Self::relu)
             }
         )
     }
 
-    pub fn add_output_layer(&mut self, input_dim: i32, output_dim: i32, weights: Vec<f32>, biases: Vec<f32>) {
+    pub fn add_output_layer(&mut self, input_dim: usize, output_dim: usize, weights: Vec<f32>, biases: Vec<f32>) {
         self.layers.push(
             Layer {
-                input_dim, weights, biases,
+                input_dim, output_dim, weights, biases,
                 act_func: Box::new(Self::sigmoid)
             }
         )
@@ -127,7 +127,8 @@ impl SurfMlpClassifier {
 type ActFunc = Fn(f32) -> f32;
 
 struct Layer {
-    input_dim: i32,
+    input_dim: usize,
+    output_dim: usize,
     weights: Vec<f32>,
     biases: Vec<f32>,
     act_func: Box<ActFunc>,
@@ -135,26 +136,25 @@ struct Layer {
 
 impl Layer {
     fn compute(&self, input: &Vec<f32>, output: &mut Vec<f32>) {
-        let input_dim = self.input_dim as usize;
         let output_dim = self.biases.len();
         for i in 0..output_dim as usize {
             let x;
             unsafe {
                 x = math::vector_inner_product(
                     input.as_ptr(),
-                    self.weights.as_ptr().offset((i * input_dim) as isize),
-                    input_dim);
+                    self.weights.as_ptr().offset((i * self.input_dim) as isize),
+                    self.input_dim);
             }
             output[i] = (self.act_func)(x);
         }
     }
 
     fn input_size(&self) -> usize {
-        self.input_dim as usize
+        self.input_dim
     }
 
     fn output_size(&self) -> usize {
-        self.biases.len()
+        self.output_dim
     }
 }
 

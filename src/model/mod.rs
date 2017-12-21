@@ -156,9 +156,9 @@ impl ModelReader {
             }
 
             if i == num_layer - 1 {
-                classifier.add_output_layer(input_dim, output_dim, weights, biases);
+                classifier.add_output_layer(input_dim as usize, output_dim as usize, weights, biases);
             } else {
-                classifier.add_layer(input_dim, output_dim, weights, biases);
+                classifier.add_layer(input_dim as usize, output_dim as usize, weights, biases);
             }
 
             input_dim = output_dim;
