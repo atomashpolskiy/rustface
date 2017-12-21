@@ -37,6 +37,26 @@ impl LabBoostedClassifier {
 
 impl Classifier for LabBoostedClassifier {
     fn classify(&mut self, output: &mut Vec<f32>) -> Score {
-        unimplemented!()
+        const K_FEAT_GROUP_SIZE: usize = 10;
+        const K_STDDEV_THRESH: f64 = 10f64;
+
+        let mut positive = true;
+        let mut score = 0f32;
+
+        let mut i = 0;
+        while positive && i < self.base_classifiers.len() {
+            let (offset_x, offset_y) = self.features[i];
+            for _ in 0..K_FEAT_GROUP_SIZE {
+                let feature_val = (*self.feature_map).borrow().get_feature_val(offset_x as u32, offset_y as u32);
+                score += self.base_classifiers[i].weights[feature_val as usize];
+                i += 1;
+            }
+            if score < self.base_classifiers[i - 1].thresh {
+                positive = false;
+            }
+        }
+        positive = positive && ((*self.feature_map).borrow().get_std_dev() > K_STDDEV_THRESH);
+
+        Score { positive, score }
     }
 }
