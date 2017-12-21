@@ -36,7 +36,7 @@ impl LabBoostedClassifier {
 }
 
 impl Classifier for LabBoostedClassifier {
-    fn classify(&mut self, output: &mut Vec<f32>) -> Option<Score> {
+    fn classify(&mut self, output: &mut Vec<f32>) -> Score {
         unimplemented!()
     }
 }
