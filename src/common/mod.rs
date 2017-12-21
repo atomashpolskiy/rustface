@@ -1,3 +1,5 @@
+mod image_pyramid;
+
 pub struct Rectangle {
     x: u32,
     y: u32,
