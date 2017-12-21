@@ -438,13 +438,13 @@ impl FeaturePool {
 
     fn new() -> Self {
         FeaturePool {
-            sample_width: 0,
-            sample_height: 0,
-            patch_move_step_x: 0,
-            patch_move_step_y: 0,
-            patch_size_inc_step: 0,
-            patch_min_width: 0,
-            patch_min_height: 0,
+            sample_width: 40,
+            sample_height: 40,
+            patch_move_step_x: 16,
+            patch_move_step_y: 16,
+            patch_size_inc_step: 1,
+            patch_min_width: 16,
+            patch_min_height: 16,
             features: vec![],
             patch_formats: vec![],
         }

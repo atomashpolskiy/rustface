@@ -40,9 +40,9 @@ impl LabBoostedFeatureMap {
             rect_sum: vec![],
             int_img: vec![],
             square_int_img: vec![],
-            rect_width: 0,
-            rect_height: 0,
-            num_rect: 0,
+            rect_width: 3,
+            rect_height: 3,
+            num_rect: 3,
         }
     }
 
