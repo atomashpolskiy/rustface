@@ -9,7 +9,7 @@ pub struct ImageData {
 }
 
 impl ImageData {
-    fn new(data: *const u8, width: u32, height: u32) -> Self {
+    pub fn new(data: *const u8, width: u32, height: u32) -> Self {
         ImageData {
             data,
             width,
@@ -36,7 +36,7 @@ impl ImageData {
         }
     }
 
-    fn data(&self) -> *const u8 {
+    pub fn data(&self) -> *const u8 {
         self.data
     }
 }
@@ -142,48 +142,47 @@ impl ImagePyramid {
         self.height_scaled = (self.height1x as f32 * self.scale_factor) as u32;
 
         let src = ImageData::new(self.img_buf.as_ptr(), self.width1x, self.height1x);
-        ImagePyramid::resize_image(&src, self.img_buf_scaled.as_mut_ptr(), self.width_scaled, self.height_scaled);
+        resize_image(&src, self.img_buf_scaled.as_mut_ptr(), self.width_scaled, self.height_scaled);
         let img_scaled = Some(ImageData::new(self.img_buf_scaled.as_ptr(), self.width_scaled, self.height_scaled));
         self.scale_factor *= self.scale_step;
 
         img_scaled
     }
+}
 
-    fn resize_image(src: &ImageData, dest: *mut u8, width: u32, height: u32) {
-        if src.width() == width && src.height() == height {
-            src.copy_to(dest);
-            return;
-        }
+pub fn resize_image(src: &ImageData, dest: *mut u8, width: u32, height: u32) {
+    if src.width() == width && src.height() == height {
+        src.copy_to(dest);
+        return;
+    }
 
-        let src_data = src.data();
+    let src_data = src.data();
 
-        let lf_x_scl = src.width() as f64 / width as f64;
-        let lf_y_scl = src.height() as f64 / height as f64;
+    let lf_x_scl = src.width() as f64 / width as f64;
+    let lf_y_scl = src.height() as f64 / height as f64;
 
-        unsafe {
-            for y in 0..height {
-                for x in 0..width {
-                    let lf_x_s = lf_x_scl * x as f64;
-                    let lf_y_s = lf_y_scl * y as f64;
+    unsafe {
+        for y in 0..height {
+            for x in 0..width {
+                let lf_x_s = lf_x_scl * x as f64;
+                let lf_y_s = lf_y_scl * y as f64;
 
-                    let n_x_s = cmp::min(lf_x_s as u32, (src.width() - 2));
-                    let n_y_s = cmp::min(lf_y_s as u32, (src.height() - 2));
+                let n_x_s = cmp::min(lf_x_s as u32, (src.width() - 2));
+                let n_y_s = cmp::min(lf_y_s as u32, (src.height() - 2));
 
-                    let lf_weight_x = lf_x_s - (n_x_s as f64);
-                    let lf_weight_y = lf_y_s - (n_y_s as f64);
+                let lf_weight_x = lf_x_s - (n_x_s as f64);
+                let lf_weight_y = lf_y_s - (n_y_s as f64);
 
-                    let d1 = *src_data.offset((n_y_s * src.width() + n_x_s) as isize) as f64;
-                    let d2 = *src_data.offset((n_y_s * src.width() + n_x_s + 1) as isize) as f64;
-                    let d3 = *src_data.offset(((n_y_s + 1) * src.width() + n_x_s) as isize) as f64;
-                    let d4 = *src_data.offset(((n_y_s + 1) * src.width() + n_x_s + 1) as isize) as f64;
+                let d1 = *src_data.offset((n_y_s * src.width() + n_x_s) as isize) as f64;
+                let d2 = *src_data.offset((n_y_s * src.width() + n_x_s + 1) as isize) as f64;
+                let d3 = *src_data.offset(((n_y_s + 1) * src.width() + n_x_s) as isize) as f64;
+                let d4 = *src_data.offset(((n_y_s + 1) * src.width() + n_x_s + 1) as isize) as f64;
 
-                    let dest_val = (1.0 - lf_weight_y) * ((1.0 - lf_weight_x) * d1 + lf_weight_x * d2) +
-                        lf_weight_y * ((1.0 - lf_weight_x) * d3 + lf_weight_x * d4);
+                let dest_val = (1.0 - lf_weight_y) * ((1.0 - lf_weight_x) * d1 + lf_weight_x * d2) +
+                    lf_weight_y * ((1.0 - lf_weight_x) * d3 + lf_weight_x * d4);
 
-                    *dest.offset((y * width + x) as isize) = dest_val as u8;
-                }
+                *dest.offset((y * width + x) as isize) = dest_val as u8;
             }
         }
     }
 }
-

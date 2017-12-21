@@ -46,44 +46,55 @@ impl LabBoostedFeatureMap {
         }
     }
 
-    pub fn get_feature_val(&self, offset_x: u32, offset_y: u32) -> u8 {
+    pub fn get_feature_val(&self, offset_x: i32, offset_y: i32) -> u8 {
         let roi = self.roi.as_ref().unwrap();
-        let i = (roi.y() + offset_y) * self.width + roi.x() + offset_x;
+        let i = (roi.y() + offset_y) * (self.width as i32) + roi.x() + offset_x;
         self.feat_map.get(i as usize)
             .expect(&format!("requested element #{}, but length is {}", i, self.feat_map.len())[..])
             .clone()
     }
 
     pub fn get_std_dev(&self) -> f64 {
-        let roi = self.roi.as_ref().unwrap();
+        let roi_width;
+        let roi_height;
+        let roi_x;
+        let roi_y;
+        {
+            let roi = self.roi.as_ref().unwrap();
+            roi_width = roi.width() as i32;
+            roi_height = roi.height() as i32;
+            roi_x = roi.x() as i32;
+            roi_y = roi.y() as i32;
+        }
+        let self_width = self.width as i32;
 
         let mean: f64;
         let m2: f64;
-        let area: f64 = (roi.width() * roi.height()) as f64;
+        let area: f64 = (roi_width * roi_height) as f64;
 
-        match (roi.x(), roi.y()) {
+        match (roi_x, roi_y) {
             (0, 0) => {
-                let bottom_right = (roi.height() - 1) * self.width + roi.width() - 1;
+                let bottom_right = (roi_height - 1) * self_width + roi_width - 1;
                 mean = self.int_img[bottom_right as usize] as f64 / area;
                 m2 = self.square_int_img[bottom_right as usize] as f64 / area;
             }
             (0, _) => {
-                let top_right = (roi.y() - 1) * self.width + roi.width() - 1;
-                let bottom_right = top_right + roi.height() * self.width;
+                let top_right = (roi_y - 1) * self_width + roi_width - 1;
+                let bottom_right = top_right + roi_height * self_width;
                 mean = (self.int_img[bottom_right as usize] - self.int_img[top_right as usize]) as f64 / area;
                 m2 = (self.square_int_img[bottom_right as usize] - self.square_int_img[top_right as usize]) as f64 / area;
             }
             (_, 0) => {
-                let bottom_left = (roi.height() - 1) * self.width + roi.x() - 1;
-                let bottom_right = bottom_left + roi.width();
+                let bottom_left = (roi_height - 1) * self_width + roi_x - 1;
+                let bottom_right = bottom_left + roi_width;
                 mean = (self.int_img[bottom_right as usize] - self.int_img[bottom_left as usize]) as f64 / area;
                 m2 = (self.square_int_img[bottom_right as usize] - self.square_int_img[bottom_left as usize]) as f64 / area;
             }
             (_, _) => {
-                let top_left = (roi.y() - 1) * self.width + roi.x() - 1;
-                let top_right = top_left + roi.width();
-                let bottom_left = top_left + roi.height() * self.width;
-                let bottom_right = bottom_left + roi.width();
+                let top_left = (roi_y - 1) * self_width + roi_x - 1;
+                let top_right = top_left + roi_width;
+                let bottom_left = top_left + roi_height * self_width;
+                let bottom_right = bottom_left + roi_width;
                 mean = (self.int_img[bottom_right as usize] - self.int_img[bottom_left as usize] +
                     self.int_img[top_left as usize] - self.int_img[top_right as usize]) as f64 / area;
                 m2 = (self.square_int_img[bottom_right as usize] - self.square_int_img[bottom_left as usize] +

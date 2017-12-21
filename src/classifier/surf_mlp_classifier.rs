@@ -54,7 +54,7 @@ impl SurfMlpClassifier {
         SurfMlpClassifier {
             feature_map,
             feature_ids: vec![],
-            thresh: 0f32,
+            thresh: 0.0,
             layers: vec![],
             layers_buf: TwoWayBuffer::new(),
             input_buf: None,
@@ -97,21 +97,21 @@ impl SurfMlpClassifier {
     }
 
     fn sigmoid(x: f32) -> f32 {
-        1f32 / (1f32 + (-x).exp())
+        1.0 / (1.0 + (-x).exp())
     }
 
     fn compute(&mut self) {
         let input = self.input_buf.as_ref().unwrap();
         let output = self.output_buf.as_mut().unwrap();
 
-        self.layers_buf.get_input().resize(self.layers[0].output_size(), 0f32);
+        self.layers_buf.get_input().resize(self.layers[0].output_size(), 0.0);
         self.layers[0].compute(input, self.layers_buf.get_input());
 
         for i in 1..(self.layers.len() - 1) {
             {
                 let layer = &self.layers[i];
                 let (input_buf, output_buf) = self.layers_buf.get_buffers();
-                output_buf.resize(layer.output_size(), 0f32);
+                output_buf.resize(layer.output_size(), 0.0);
                 layer.compute(input_buf, output_buf);
             }
             self.layers_buf.swap();

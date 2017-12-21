@@ -497,8 +497,8 @@ impl FeaturePool {
     }
 
     fn collect_features(&self, width: u32, height: u32, num_cell_per_row: u32, num_cell_per_col: u32, dest: &mut Vec<Feature>) {
-        let y_lim = self.sample_height - height;
-        let x_lim = self.sample_width - width;
+        let y_lim = (self.sample_height - height) as i32;
+        let x_lim = (self.sample_width - width) as i32;
 
         let mut y = 0;
         while y <= y_lim {
@@ -510,9 +510,9 @@ impl FeaturePool {
                         num_cell_per_row, num_cell_per_col
                     }
                 );
-                x += self.patch_move_step_x;
+                x += self.patch_move_step_x as i32;
             }
-            y += self.patch_move_step_y;
+            y += self.patch_move_step_y as i32;
         }
     }
 
