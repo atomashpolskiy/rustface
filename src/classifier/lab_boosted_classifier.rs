@@ -1,10 +1,11 @@
 use std::rc::Rc;
+use std::cell::RefCell;
 
 use super::{Classifier, Score};
 use feat::LabBoostedFeatureMap;
 
 pub struct LabBoostedClassifier {
-    feature_map: Rc<LabBoostedFeatureMap>,
+    feature_map: Rc<RefCell<LabBoostedFeatureMap>>,
     features: Vec<(i32, i32)>,
     base_classifiers: Vec<BaseClassifier>,
 }
@@ -15,7 +16,7 @@ struct BaseClassifier {
 }
 
 impl LabBoostedClassifier {
-    pub fn new(feature_map: Rc<LabBoostedFeatureMap>) -> Self {
+    pub fn new(feature_map: Rc<RefCell<LabBoostedFeatureMap>>) -> Self {
         LabBoostedClassifier {
             feature_map,
             features: vec![],
@@ -35,7 +36,7 @@ impl LabBoostedClassifier {
 }
 
 impl Classifier for LabBoostedClassifier {
-    fn classify(&self, output: &mut Vec<f32>) -> Option<Score> {
+    fn classify(&mut self, output: &mut Vec<f32>) -> Option<Score> {
         unimplemented!()
     }
 }

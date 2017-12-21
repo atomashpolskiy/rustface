@@ -2,6 +2,7 @@ use std::fs::File;
 use std::io;
 use std::io::{Cursor, Read};
 use std::rc::Rc;
+use std::cell::RefCell;
 
 use byteorder::{ReadBytesExt, LittleEndian};
 use classifier::{Classifier, ClassifierKind, LabBoostedClassifier, SurfMlpClassifier};
@@ -31,16 +32,16 @@ pub fn load_model(path: &str) -> Result<Model, io::Error> {
 
 struct ModelReader {
     reader: Cursor<Vec<u8>>,
-    lab_boosted_feature_map: Rc<LabBoostedFeatureMap>,
-    surf_mlp_feature_map: Rc<SurfMlpFeatureMap>,
+    lab_boosted_feature_map: Rc<RefCell<LabBoostedFeatureMap>>,
+    surf_mlp_feature_map: Rc<RefCell<SurfMlpFeatureMap>>,
 }
 
 impl ModelReader {
     fn new(buf: Vec<u8>) -> Self {
         ModelReader {
             reader: Cursor::new(buf),
-            lab_boosted_feature_map: Rc::new(LabBoostedFeatureMap::new()),
-            surf_mlp_feature_map: Rc::new(SurfMlpFeatureMap::new()),
+            lab_boosted_feature_map: Rc::new(RefCell::new(LabBoostedFeatureMap::new())),
+            surf_mlp_feature_map: Rc::new(RefCell::new(SurfMlpFeatureMap::new())),
         }
     }
 

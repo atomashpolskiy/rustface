@@ -376,7 +376,7 @@ impl SurfMlpFeatureMap {
         }
     }
 
-    unsafe fn get_feature_vector(&mut self, feature_id: usize, feature_vec: *mut f32) {
+    pub unsafe fn get_feature_vector(&mut self, feature_id: usize, feature_vec: *mut f32) {
         if !self.feature_valid_indicators[feature_id] {
             let feature = self.feature_pool.get_feature(feature_id);
             let feature_vec = self.feature_vectors[feature_id].as_mut_ptr();
@@ -414,6 +414,10 @@ impl SurfMlpFeatureMap {
                 *feature_vec_normalized.offset(i) = 0f32;
             }
         }
+    }
+
+    pub fn get_feature_vector_dim(&self, feature_id: usize) -> usize {
+        self.feature_pool.get_feature_vector_dim(feature_id)
     }
 }
 
