@@ -25,6 +25,16 @@ pub struct Score {
     score: f32,
 }
 
+impl Score {
+    pub fn positive(&self) -> bool {
+        self.positive
+    }
+
+    pub fn score(&self) -> f32 {
+        self.score
+    }
+}
+
 pub trait Classifier {
     fn classify(&mut self, output: &mut Vec<f32>) -> Score;
 }

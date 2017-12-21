@@ -5,9 +5,7 @@ use math;
 use super::{Classifier, Score};
 use feat::SurfMlpFeatureMap;
 use std::ptr;
-use std::borrow::BorrowMut;
 use std::cell::RefCell;
-use std::mem;
 
 struct TwoWayBuffer {
     input: Vec<f32>,

@@ -36,7 +36,7 @@ impl LabBoostedClassifier {
 }
 
 impl Classifier for LabBoostedClassifier {
-    fn classify(&mut self, output: &mut Vec<f32>) -> Score {
+    fn classify(&mut self, _: &mut Vec<f32>) -> Score {
         const K_FEAT_GROUP_SIZE: usize = 10;
         const K_STDDEV_THRESH: f64 = 10f64;
 

@@ -176,7 +176,7 @@ impl SurfMlpFeatureMap {
 
         let mut src = self.int_img.as_mut_ptr();
         unsafe {
-            for i in 0..self.length {
+            for _ in 0..self.length {
                 dx = *grad_x_ptr.offset(1);
                 dy = *grad_y_ptr.offset(1);
 
@@ -239,7 +239,7 @@ impl SurfMlpFeatureMap {
         let mut cell_bottom_right: Vec<*const i32> = Vec::with_capacity(k_num_int_channel as usize);
         let mut feature_value: *mut i32 = feature_vec;
         let int_img_ptr = self.int_img.as_ptr();
-        let mut offset: isize = 0;
+        let mut offset: isize;
 
         match (init_cell_x, init_cell_y) {
             (0, 0) => {
@@ -252,7 +252,7 @@ impl SurfMlpFeatureMap {
                     cell_top_right[i] = cell_bottom_right[i];
                 }
 
-                for i in 1..feature.num_cell_per_row {
+                for _ in 1..feature.num_cell_per_row {
                     for j in 0..k_num_int_channel as usize {
                         cell_bottom_left[j] = cell_bottom_right[j];
                         cell_bottom_right[j] = cell_bottom_right[j].offset(cell_width);
@@ -272,7 +272,7 @@ impl SurfMlpFeatureMap {
                     cell_top_right[i] = cell_bottom_right[i];
                 }
 
-                for i in 1..feature.num_cell_per_row {
+                for _ in 1..feature.num_cell_per_row {
                     for j in 0..k_num_int_channel as usize {
                         cell_bottom_left[j] = cell_bottom_right[j];
                         cell_bottom_right[j] = cell_bottom_right[j].offset(cell_width);
@@ -294,7 +294,7 @@ impl SurfMlpFeatureMap {
                     feature_value = feature_value.offset(1);
                 }
 
-                for i in 1..feature.num_cell_per_row {
+                for _ in 1..feature.num_cell_per_row {
                     for j in 0..k_num_int_channel as usize {
                         cell_top_left[j] = cell_top_right[j];
                         cell_top_right[j] = cell_top_right[j].offset(cell_width);
@@ -324,7 +324,7 @@ impl SurfMlpFeatureMap {
                     tmp_cell_top_right[i] = cell_bottom_right[i];
                 }
 
-                for i in 1..feature.num_cell_per_row {
+                for _ in 1..feature.num_cell_per_row {
                     for j in 0..k_num_int_channel as usize {
                         cell_top_left[j] = cell_top_right[j];
                         cell_top_right[j] = cell_top_right[j].offset(cell_width);
@@ -342,7 +342,7 @@ impl SurfMlpFeatureMap {
         }
 
         offset = cell_height * row_width - feature.patch.width() as isize * k_num_int_channel + cell_width;
-        for i in 1..feature.num_cell_per_row {
+        for _ in 1..feature.num_cell_per_row {
             if init_cell_x == 0 {
                 for j in 0..k_num_int_channel as usize {
                     cell_bottom_right[j] = cell_bottom_right[j].offset(offset);
@@ -359,7 +359,7 @@ impl SurfMlpFeatureMap {
                 }
             }
 
-            for j in 1..feature.num_cell_per_row {
+            for _ in 1..feature.num_cell_per_row {
                 for k in 0..k_num_int_channel as usize {
                     cell_top_left[k] = cell_top_right[k];
                     cell_top_right[k] = cell_top_right[k].offset(cell_width);
