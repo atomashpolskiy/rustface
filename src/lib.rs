@@ -149,6 +149,7 @@ impl FuStDetector {
     }
 }
 
+// fucking insanity
 impl Detector for FuStDetector {
     fn detect(&mut self, image: &mut ImagePyramid) -> Vec<FaceInfo> {
         let mut scale_factor = 0.0;
@@ -156,7 +157,8 @@ impl Detector for FuStDetector {
 
         let wnd_info = Rc::new(RefCell::new(FaceInfo::new()));
         let first_hierarchy_size = self.model.get_hierarchy_size(0) as usize;
-        let mut proposals: Vec<Vec<Rc<RefCell<FaceInfo>>>> = Vec::with_capacity(first_hierarchy_size);
+        let mut proposals: Vec<Rc<RefCell<Vec<Rc<RefCell<FaceInfo>>>>>> = Vec::with_capacity(first_hierarchy_size);
+        let mut proposals_nms: Vec<Rc<RefCell<Vec<Rc<RefCell<FaceInfo>>>>>> = Vec::with_capacity(first_hierarchy_size);
 
         loop {
             match image_scaled_optional {
@@ -183,7 +185,7 @@ impl Detector for FuStDetector {
                                 let score = (&mut *self.model.get_classifiers()[i]).classify(None);
                                 if score.is_positive() {
                                     wnd_info.borrow_mut().set_score(score.score() as f64);
-                                    proposals[i].push(Rc::clone(&wnd_info));
+                                    proposals[i].borrow_mut().push(Rc::clone(&wnd_info));
                                 }
                             }
                             x += self.slide_wnd_step_x;
@@ -196,10 +198,9 @@ impl Detector for FuStDetector {
             image_scaled_optional = image.get_next_scale_image(&mut scale_factor);
         }
 
-        let mut proposals_nms = Vec::with_capacity(first_hierarchy_size);
         for i in 0..first_hierarchy_size {
-            non_maximum_suppression(&mut proposals[i], &mut proposals_nms[i], 0.8);
-            proposals[i].clear();
+            non_maximum_suppression(proposals[i].borrow_mut().as_mut(), proposals_nms[i].borrow_mut().as_mut(), 0.8);
+            proposals[i].borrow_mut().clear();
         }
 
         let image1x = image.get_image_1x();
@@ -221,64 +222,67 @@ impl Detector for FuStDetector {
                     let num_wnd_src = wnd_src.len();
                     buf_idx[j] = wnd_src[0];
                     r = buf_idx[j] as usize;
-                    proposals[r].clear();
+                    proposals[r].borrow_mut().clear();
 
                     for k in 0..num_wnd_src {
-                        for ref item in proposals_nms[wnd_src[k] as usize].iter() {
-                            let last_index = proposals[r].len() - 1;
-                            proposals[r].insert(last_index, Rc::clone(item));
+                        for ref item in proposals_nms[wnd_src[k] as usize].borrow().iter() {
+                            let last_index = proposals[r].borrow().len() - 1;
+                            proposals[r].borrow_mut().insert(last_index, Rc::clone(item));
                         }
                     }
                 }
 
                 let k_max = self.model.get_num_stage(cls_idx);
                 for k in 0..k_max {
-                    let num_wnd = proposals[r].len();
-                    let bboxes = &proposals[r];
                     let mut bbox_id = 0;
+                    {
+                        let num_wnd = proposals[r].borrow().len();
+                        let bboxes = &proposals[r].borrow_mut();
 
-                    for m in 0..num_wnd {
-                        if bboxes[m].borrow().bbox().x() + bboxes[m].borrow().bbox().width() as i32 <= 0 ||
-                            bboxes[m].borrow().bbox().y() + bboxes[m].borrow().bbox().height() as i32 <= 0 {
-                            continue;
-                        }
 
-                        self.get_window_data(&image1x, bboxes[m].borrow_mut().bbox_mut());
-                        let img_temp = ImageData::new(self.wnd_data.as_ptr(), self.wnd_size, self.wnd_size);
-                        self.model.get_classifiers()[model_idx].compute(&img_temp);
-                        self.model.get_classifiers()[model_idx].set_roi(Rectangle::new(0, 0, self.wnd_size, self.wnd_size));
+                        for m in 0..num_wnd {
+                            if bboxes[m].borrow().bbox().x() + bboxes[m].borrow().bbox().width() as i32 <= 0 ||
+                                bboxes[m].borrow().bbox().y() + bboxes[m].borrow().bbox().height() as i32 <= 0 {
+                                continue;
+                            }
 
-                        let new_score = self.model.get_classifiers()[model_idx].classify(Some(&mut mlp_predicts));
-                        if new_score.is_positive() {
-                            let x = bboxes[m].borrow().bbox().x() as f32;
-                            let y = bboxes[m].borrow().bbox().y() as f32;
-                            let w = bboxes[m].borrow().bbox().width() as f32;
-                            let h = bboxes[m].borrow().bbox().height() as f32;
+                            self.get_window_data(&image1x, bboxes[m].borrow_mut().bbox_mut());
+                            let img_temp = ImageData::new(self.wnd_data.as_ptr(), self.wnd_size, self.wnd_size);
+                            self.model.get_classifiers()[model_idx].compute(&img_temp);
+                            self.model.get_classifiers()[model_idx].set_roi(Rectangle::new(0, 0, self.wnd_size, self.wnd_size));
 
-                            let bbox_w = ((mlp_predicts[3] * 2.0 - 1.0) * w + w + 0.5) as f32;
-                            bboxes[bbox_id].borrow_mut().bbox_mut().set_width(bbox_w as u32);
-                            bboxes[bbox_id].borrow_mut().bbox_mut().set_height(bbox_w as u32);
+                            let new_score = self.model.get_classifiers()[model_idx].classify(Some(&mut mlp_predicts));
+                            if new_score.is_positive() {
+                                let x = bboxes[m].borrow().bbox().x() as f32;
+                                let y = bboxes[m].borrow().bbox().y() as f32;
+                                let w = bboxes[m].borrow().bbox().width() as f32;
+                                let h = bboxes[m].borrow().bbox().height() as f32;
 
-                            bboxes[bbox_id].borrow_mut().bbox_mut().set_x(
-                                ((mlp_predicts[1] * 2.0 - 1.0) * w + x + (w - bbox_w) * 0.5 + 0.5) as i32);
+                                let bbox_w = ((mlp_predicts[3] * 2.0 - 1.0) * w + w + 0.5) as f32;
+                                bboxes[bbox_id].borrow_mut().bbox_mut().set_width(bbox_w as u32);
+                                bboxes[bbox_id].borrow_mut().bbox_mut().set_height(bbox_w as u32);
 
-                            bboxes[bbox_id].borrow_mut().bbox_mut().set_y(
-                                ((mlp_predicts[2] * 2.0 - 1.0) * h + y + (h - bbox_w) * 0.5 + 0.5) as i32);
+                                bboxes[bbox_id].borrow_mut().bbox_mut().set_x(
+                                    ((mlp_predicts[1] * 2.0 - 1.0) * w + x + (w - bbox_w) * 0.5 + 0.5) as i32);
 
-                            bboxes[bbox_id].borrow_mut().set_score(new_score.score() as f64);
+                                bboxes[bbox_id].borrow_mut().bbox_mut().set_y(
+                                    ((mlp_predicts[2] * 2.0 - 1.0) * h + y + (h - bbox_w) * 0.5 + 0.5) as i32);
 
-                            bbox_id += 1;
+                                bboxes[bbox_id].borrow_mut().set_score(new_score.score() as f64);
+
+                                bbox_id += 1;
+                            }
                         }
                     }
 
-                    proposals[r].truncate(bbox_id);
+                    proposals[r].borrow_mut().truncate(bbox_id);
 
                     if k < (k_max - 1) {
-                        non_maximum_suppression(&mut proposals[r], &mut proposals_nms[r], 0.8);
-                        proposals[r] = proposals_nms[r];
+                        non_maximum_suppression(proposals[r].borrow_mut().as_mut(), proposals_nms[r].borrow_mut().as_mut(), 0.8);
+                        proposals[r] = Rc::clone(&proposals_nms[r]);
                     } else if i == (self.model.get_hierarchy_count() - 1) {
-                        non_maximum_suppression(&mut proposals[r], &mut proposals_nms[r], 0.3);
-                        proposals[r] = proposals_nms[r];
+                        non_maximum_suppression(proposals[r].borrow_mut().as_mut(), proposals_nms[r].borrow_mut().as_mut(), 0.3);
+                        proposals[r] = Rc::clone(&proposals_nms[r]);
                     }
 
                     model_idx += 1;
@@ -288,12 +292,14 @@ impl Detector for FuStDetector {
             }
 
             for j in 0..hierarchy_size_i {
-                proposals_nms[j] = proposals[j];
+                proposals_nms[j] = Rc::clone(&proposals[j]);
             }
         }
 
-        let proposals_nms = proposals_nms[0];
-        proposals_nms.into_iter()
+        proposals_nms.into_iter().take(1)
+            .map(|rc| Rc::try_unwrap(rc).and_then(|cell| Ok(cell.into_inner())).ok().unwrap())
+            .into_iter()
+            .flat_map(|vec| vec.into_iter())
             .map(|rc| Rc::try_unwrap(rc).and_then(|cell| Ok(cell.into_inner())).ok().unwrap())
             .collect()
     }
