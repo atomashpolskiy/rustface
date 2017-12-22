@@ -66,11 +66,19 @@ impl FaceInfo {
         }
     }
 
+    pub fn bbox(&self) -> &Rectangle {
+        &self.bbox
+    }
+
     pub fn bbox_mut(&mut self) -> &mut Rectangle {
         &mut self.bbox
     }
 
     pub fn set_score(&mut self, score: f64) {
         self.score = score;
+    }
+
+    pub fn score(&self) -> f64 {
+        self.score
     }
 }

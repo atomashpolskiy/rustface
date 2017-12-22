@@ -7,6 +7,7 @@ mod classifier;
 pub mod model;
 
 use std::{cmp, ptr};
+use std::cmp::Ordering::*;
 use std::cell::RefCell;
 use std::rc::Rc;
 use common::{FaceInfo, ImageData, ImagePyramid, Rectangle};
@@ -195,17 +196,11 @@ impl Detector for FuStDetector {
             image_scaled_optional = image.get_next_scale_image(&mut scale_factor);
         }
 
-
-
-        /*
-        std::vector<std::vector<seeta::FaceInfo> > proposals_nms(hierarchy_size_[0]);
-          for (int32_t i = 0; i < hierarchy_size_[0]; i++) {
-            seeta::fd::NonMaximumSuppression(&(proposals[i]),
-              &(proposals_nms[i]), 0.8f);
+        let mut proposals_nms = Vec::with_capacity(first_hierarchy_size);
+        for i in 0..first_hierarchy_size {
+            non_maximum_suppression(&mut proposals[i], &mut proposals_nms[i], 0.8);
             proposals[i].clear();
-          }
-
-        */
+        }
 
 
 
@@ -214,5 +209,74 @@ impl Detector for FuStDetector {
 
 
         vec![]
+    }
+}
+
+fn non_maximum_suppression(bboxes: &mut Vec<Rc<RefCell<FaceInfo>>>, bboxes_nms: &mut Vec<Rc<RefCell<FaceInfo>>>, iou_thresh: f32) {
+    bboxes_nms.clear();
+    bboxes.sort_by(|x, y| {
+        let x_score = x.borrow().score();
+        let y_score = y.borrow().score();
+        if x_score > y_score {
+            // x goes before y
+            Less
+        } else if x_score < y_score {
+            Greater
+        } else {
+            Equal
+        }
+    });
+
+    let mut select_idx = 0;
+    let mut mask_merged = Vec::with_capacity(bboxes.len());
+
+    loop {
+        while select_idx < bboxes.len() && mask_merged[select_idx] == 1 {
+            select_idx += 1;
+        }
+
+        if select_idx == bboxes.len() {
+            break;
+        }
+
+        bboxes_nms.push(Rc::clone(&bboxes[select_idx]));
+        mask_merged[select_idx] = 1;
+
+        let select_bbox_ref = bboxes[select_idx].borrow();
+        let select_bbox = select_bbox_ref.bbox();
+        let area1 = (select_bbox.width() * select_bbox.height()) as f32;
+        let x1 = select_bbox.x();
+        let y1 = select_bbox.y();
+        let x2 = select_bbox.x() + select_bbox.width() as i32 - 1;
+        let y2 = select_bbox.y() + select_bbox.height() as i32 - 1;
+
+        select_idx += 1;
+
+        for i in select_idx..bboxes.len() {
+            if mask_merged[i] == 1 {
+                continue;
+            }
+
+            let bbox_i_ref = bboxes[i].borrow();
+            let bbox_i = bbox_i_ref.bbox();
+            let x = cmp::max(x1, bbox_i.x());
+            let y = cmp::max(y1, bbox_i.y());
+            let w = cmp::min(x2, (bbox_i.x() + bbox_i.width() as i32 - 1)) - x + 1;
+            let h = cmp::min(y2, (bbox_i.y() + bbox_i.height() as i32 - 1)) - y + 1;
+
+            if w <= 0 || h <= 0 {
+                continue;
+            }
+
+            let area2 = (bbox_i.width() * bbox_i.height()) as f32;
+            let area_intersect = (w * h) as f32;
+            let area_union = area1 + area2 - area_intersect;
+            if area_intersect / area_union > iou_thresh {
+                mask_merged[i] = 1;
+                let mut bboxes_nms_last = bboxes_nms.last().unwrap().borrow_mut();
+                let score = bboxes_nms_last.score();
+                bboxes_nms_last.set_score(score + bboxes[i].borrow().score());
+            }
+        }
     }
 }
