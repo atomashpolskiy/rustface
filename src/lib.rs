@@ -14,7 +14,35 @@ use common::{FaceInfo, ImageData, ImagePyramid, Rectangle};
 use model::Model;
 
 trait Detector {
-    fn detect(&mut self, image: &mut ImagePyramid) -> Vec<FaceInfo>;
+    fn detect(&mut self, image: &mut ImageData) -> Vec<FaceInfo>;
+}
+
+impl Detector for FuStDetector {
+    fn detect(&mut self, image: &mut ImageData) -> Vec<FaceInfo> {
+        if !is_legal_image(image) {
+            panic!("Illegal image");
+        }
+
+        let mut min_img_size = cmp::min(image.height(), image.width());
+        if self.max_face_size > 0 {
+            min_img_size = cmp::min(self.max_face_size as u32, min_img_size);
+        }
+
+        const K_WND_SIZE: f32 = 40.0;
+
+        let mut image_pyramid = ImagePyramid::new();
+        image_pyramid.set_image_1x(image.data(), image.width(), image.height());
+        image_pyramid.set_min_scale(K_WND_SIZE / min_img_size as f32);
+        self.set_window_size(K_WND_SIZE as u32);
+
+        self.detect_impl(&mut image_pyramid).into_iter()
+            .filter(|x| x.score() >= self.cls_thresh)
+            .collect()
+    }
+}
+
+fn is_legal_image(image: &ImageData) -> bool {
+    image.num_channels() == 1 && image.width() > 0 && image.height() > 0
 }
 
 struct FuStDetector {
@@ -24,6 +52,8 @@ struct FuStDetector {
     wnd_size: u32,
     slide_wnd_step_x: u32,
     slide_wnd_step_y: u32,
+    max_face_size: i32,
+    cls_thresh: f64,
 }
 
 impl FuStDetector {
@@ -31,7 +61,6 @@ impl FuStDetector {
         let wnd_size = 40;
         let slide_wnd_step_x = 4;
         let slide_wnd_step_y = 4;
-        let num_hierarchy = 0;
 
         FuStDetector {
             model,
@@ -40,6 +69,8 @@ impl FuStDetector {
             wnd_size,
             slide_wnd_step_x,
             slide_wnd_step_y,
+            max_face_size: -1,
+            cls_thresh: 3.85,
         }
     }
 
@@ -56,6 +87,10 @@ impl FuStDetector {
         if step_y > 0 {
             self.slide_wnd_step_y = step_y;
         }
+    }
+
+    fn set_max_face_size(&mut self, max_face_size: u32) {
+        self.max_face_size = max_face_size as i32;
     }
 
     fn get_window_data(&mut self, img: &ImageData, wnd: &mut Rectangle) {
@@ -147,11 +182,8 @@ impl FuStDetector {
         let src_img = ImageData::new(self.wnd_data_buf.as_ptr(), roi.width(), roi.height());
         common::resize_image(&src_img, self.wnd_data.as_mut_ptr(), self.wnd_size, self.wnd_size);
     }
-}
 
-// fucking insanity
-impl Detector for FuStDetector {
-    fn detect(&mut self, image: &mut ImagePyramid) -> Vec<FaceInfo> {
+    fn detect_impl(&mut self, image: &mut ImagePyramid) -> Vec<FaceInfo> {
         let mut scale_factor = 0.0;
         let mut image_scaled_optional = image.get_next_scale_image(&mut scale_factor);
 
