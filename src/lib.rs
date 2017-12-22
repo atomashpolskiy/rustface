@@ -202,7 +202,30 @@ impl Detector for FuStDetector {
             proposals[i].clear();
         }
 
+        let cls_idx = first_hierarchy_size;
+        let model_idx = first_hierarchy_size;
+        let mut buf_idx = vec![];
 
+        for i in 1..self.model.get_hierarchy_count() {
+
+            let hierarchy_size_i = self.model.get_hierarchy_size(i) as usize;
+            buf_idx.resize(hierarchy_size_i, 0);
+
+            for j in 0..hierarchy_size_i as usize {
+                let wnd_src = self.model.get_wnd_src(cls_idx);
+                let num_wnd_src = wnd_src.len();
+                buf_idx[j] = wnd_src[0];
+                let r = buf_idx[j] as usize;
+                proposals[r].clear();
+
+                for k in 0..num_wnd_src {
+                    for ref item in proposals_nms[wnd_src[k] as usize].iter() {
+                        let last_index = proposals[r].len() - 1;
+                        proposals[r].insert(last_index, Rc::clone(item));
+                    }
+                }
+            }
+        }
 
 
 
@@ -210,6 +233,89 @@ impl Detector for FuStDetector {
 
         vec![]
     }
+
+    /*
+      seeta::ImageData img = img_pyramid->image1x();
+      seeta::Rect roi;
+      std::vector<float> mlp_predicts(4);  // @todo no hard-coded number!
+      roi.x = roi.y = 0;
+      roi.width = roi.height = wnd_size_;
+
+      int32_t cls_idx = hierarchy_size_[0];
+      int32_t model_idx = hierarchy_size_[0];
+      std::vector<int32_t> buf_idx;
+
+      for (int32_t i = 1; i < num_hierarchy_; i++) {
+        buf_idx.resize(hierarchy_size_[i]);
+        for (int32_t j = 0; j < hierarchy_size_[i]; j++) {
+          int32_t num_wnd_src = static_cast<int32_t>(wnd_src_id_[cls_idx].size());
+          std::vector<int32_t> & wnd_src = wnd_src_id_[cls_idx];
+          buf_idx[j] = wnd_src[0];
+          proposals[buf_idx[j]].clear();
+          for (int32_t k = 0; k < num_wnd_src; k++) {
+            proposals[buf_idx[j]].insert(proposals[buf_idx[j]].end(),
+              proposals_nms[wnd_src[k]].begin(), proposals_nms[wnd_src[k]].end());
+          }
+
+          std::shared_ptr<seeta::fd::FeatureMap> & feat_map =
+            feat_map_[cls2feat_idx_[model_[model_idx]->type()]];
+          for (int32_t k = 0; k < num_stage_[cls_idx]; k++) {
+            int32_t num_wnd = static_cast<int32_t>(proposals[buf_idx[j]].size());
+            std::vector<seeta::FaceInfo> & bboxes = proposals[buf_idx[j]];
+            int32_t bbox_idx = 0;
+
+            for (int32_t m = 0; m < num_wnd; m++) {
+              if (bboxes[m].bbox.x + bboxes[m].bbox.width <= 0 ||
+                  bboxes[m].bbox.y + bboxes[m].bbox.height <= 0)
+                continue;
+              GetWindowData(img, bboxes[m].bbox);
+              feat_map->Compute(wnd_data_.data(), wnd_size_, wnd_size_);
+              feat_map->SetROI(roi);
+
+              if (model_[model_idx]->Classify(&score, mlp_predicts.data())) {
+                float x = static_cast<float>(bboxes[m].bbox.x);
+                float y = static_cast<float>(bboxes[m].bbox.y);
+                float w = static_cast<float>(bboxes[m].bbox.width);
+                float h = static_cast<float>(bboxes[m].bbox.height);
+
+                bboxes[bbox_idx].bbox.width =
+                  static_cast<int32_t>((mlp_predicts[3] * 2 - 1) * w + w + 0.5);
+                bboxes[bbox_idx].bbox.height = bboxes[bbox_idx].bbox.width;
+                bboxes[bbox_idx].bbox.x =
+                  static_cast<int32_t>((mlp_predicts[1] * 2 - 1) * w + x +
+                  (w - bboxes[bbox_idx].bbox.width) * 0.5 + 0.5);
+                bboxes[bbox_idx].bbox.y =
+                  static_cast<int32_t>((mlp_predicts[2] * 2 - 1) * h + y +
+                  (h - bboxes[bbox_idx].bbox.height) * 0.5 + 0.5);
+                bboxes[bbox_idx].score = score;
+                bbox_idx++;
+              }
+            }
+            proposals[buf_idx[j]].resize(bbox_idx);
+
+            if (k < num_stage_[cls_idx] - 1) {
+              seeta::fd::NonMaximumSuppression(&(proposals[buf_idx[j]]),
+                &(proposals_nms[buf_idx[j]]), 0.8f);
+              proposals[buf_idx[j]] = proposals_nms[buf_idx[j]];
+            } else {
+              if (i == num_hierarchy_ - 1) {
+                seeta::fd::NonMaximumSuppression(&(proposals[buf_idx[j]]),
+                  &(proposals_nms[buf_idx[j]]), 0.3f);
+                proposals[buf_idx[j]] = proposals_nms[buf_idx[j]];
+              }
+            }
+            model_idx++;
+          }
+
+          cls_idx++;
+        }
+
+        for (int32_t j = 0; j < hierarchy_size_[i]; j++)
+          proposals_nms[j] = proposals[buf_idx[j]];
+      }
+
+      return proposals_nms[0];
+    */
 }
 
 fn non_maximum_suppression(bboxes: &mut Vec<Rc<RefCell<FaceInfo>>>, bboxes_nms: &mut Vec<Rc<RefCell<FaceInfo>>>, iou_thresh: f32) {

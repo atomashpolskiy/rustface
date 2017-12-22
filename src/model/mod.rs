@@ -27,6 +27,10 @@ impl Model {
         &mut self.classifiers
     }
 
+    pub fn get_wnd_src(&self, id: usize) -> &Vec<i32> {
+        &self.wnd_src_id[id]
+    }
+
     pub fn get_hierarchy_count(&self) -> usize {
         self.hierarchy_sizes.len()
     }
