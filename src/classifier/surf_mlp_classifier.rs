@@ -158,7 +158,7 @@ impl Layer {
 }
 
 impl Classifier for SurfMlpClassifier {
-    fn classify(&mut self, output: &mut Vec<f32>) -> Score {
+    fn classify(&mut self, output: Option<&mut Vec<f32>>) -> Score {
         if let None = self.input_buf {
             let input_layer = self.layers.get(0).expect("No layers");
             self.input_buf = Some(Vec::with_capacity(input_layer.input_size()));
@@ -191,8 +191,10 @@ impl Classifier for SurfMlpClassifier {
             score,
         };
 
-        unsafe {
-            ptr::copy_nonoverlapping(output_buf.as_ptr(), output.as_mut_ptr(), output_buf.len());
+        if let Some(output) = output {
+            unsafe {
+                ptr::copy_nonoverlapping(output_buf.as_ptr(), output.as_mut_ptr(), output_buf.len());
+            }
         }
 
         score

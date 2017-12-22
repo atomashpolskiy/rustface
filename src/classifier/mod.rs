@@ -28,7 +28,7 @@ pub struct Score {
 }
 
 impl Score {
-    pub fn positive(&self) -> bool {
+    pub fn is_positive(&self) -> bool {
         self.positive
     }
 
@@ -40,5 +40,5 @@ impl Score {
 pub trait Classifier {
     fn compute(&mut self, image: &ImageData);
     fn set_roi(&mut self, roi: Rectangle);
-    fn classify(&mut self, output: &mut Vec<f32>) -> Score;
+    fn classify(&mut self, output: Option<&mut Vec<f32>>) -> Score;
 }

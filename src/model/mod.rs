@@ -27,8 +27,12 @@ impl Model {
         &mut self.classifiers
     }
 
-    pub fn get_hierarchy_sizes(&self) -> &[i32] {
-        &self.hierarchy_sizes
+    pub fn get_hierarchy_count(&self) -> usize {
+        self.hierarchy_sizes.len()
+    }
+
+    pub fn get_hierarchy_size(&self, hierarchy_index: usize) -> i32 {
+        self.hierarchy_sizes[hierarchy_index]
     }
 }
 

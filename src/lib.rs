@@ -7,6 +7,8 @@ mod classifier;
 pub mod model;
 
 use std::{cmp, ptr};
+use std::cell::RefCell;
+use std::rc::Rc;
 use common::{FaceInfo, ImageData, ImagePyramid, Rectangle};
 use model::Model;
 
@@ -149,76 +151,61 @@ impl FuStDetector {
 impl Detector for FuStDetector {
     fn detect(&mut self, image: &mut ImagePyramid) -> Vec<FaceInfo> {
         let mut scale_factor = 0.0;
-        let image_scaled_optional = image.get_next_scale_image(&mut scale_factor);
+        let mut image_scaled_optional = image.get_next_scale_image(&mut scale_factor);
 
-        let mut wnd_info = FaceInfo::new();
-        let hierarchy_sizes = self.model.get_hierarchy_sizes();
-        let proposals: Vec<Vec<FaceInfo>> = Vec::with_capacity(hierarchy_sizes[0] as usize);
+        let wnd_info = Rc::new(RefCell::new(FaceInfo::new()));
+        let first_hierarchy_size = self.model.get_hierarchy_size(0) as usize;
+        let mut proposals: Vec<Vec<Rc<RefCell<FaceInfo>>>> = Vec::with_capacity(first_hierarchy_size);
 
-        let classifiers = self.model.get_classifiers();
-        let ref mut first_classifier = classifiers[0];
+        loop {
+            match image_scaled_optional {
+                Some(ref image_scaled) => {
+                    self.model.get_classifiers()[0].compute(image_scaled);
 
-        while let Some(ref image_scaled) = image_scaled_optional {
-            first_classifier.compute(image_scaled);
+                    let width = (self.wnd_size as f32 / scale_factor + 0.5) as u32;
+                    wnd_info.borrow_mut().bbox_mut().set_width(width);
+                    wnd_info.borrow_mut().bbox_mut().set_height(width);
 
-            let width = (self.wnd_size as f32 / scale_factor + 0.5) as u32;
-            wnd_info.bbox_mut().set_width(width);
-            wnd_info.bbox_mut().set_height(width);
+                    let mut x = 0;
+                    let mut y = 0;
+                    let max_x = image_scaled.width() - self.wnd_size;
+                    let max_y = image_scaled.height() - self.wnd_size;
 
-            let mut x = 0;
-            let mut y = 0;
-            let max_x = image_scaled.width() - self.wnd_size;
-            let max_y = image_scaled.height() - self.wnd_size;
+                    while y <= max_y {
+                        while x <= max_x {
+                            self.model.get_classifiers()[0].set_roi(Rectangle::new(x as i32, y as i32, self.wnd_size, self.wnd_size));
 
-            while y <= max_y {
-                while x <= max_x {
-                    first_classifier.set_roi(Rectangle::new(x as i32, y as i32, self.wnd_size, self.wnd_size));
+                            wnd_info.borrow_mut().bbox_mut().set_x((x as f32 / scale_factor + 0.5) as i32);
+                            wnd_info.borrow_mut().bbox_mut().set_y((y as f32 / scale_factor + 0.5) as i32);
 
-                    wnd_info.bbox_mut().set_x((x as f32 / scale_factor + 0.5) as i32);
-                    wnd_info.bbox_mut().set_y((y as f32 / scale_factor + 0.5) as i32);
-
-                    for i in 0..hierarchy_sizes[0] as usize {
-                        let score = (&*classifiers[i]).classify();
+                            for i in 0..first_hierarchy_size {
+                                let score = (&mut *self.model.get_classifiers()[i]).classify(None);
+                                if score.is_positive() {
+                                    wnd_info.borrow_mut().set_score(score.score() as f64);
+                                    proposals[i].push(Rc::clone(&wnd_info));
+                                }
+                            }
+                            x += self.slide_wnd_step_x;
+                        }
+                        y += self.slide_wnd_step_y;
                     }
-                    x += self.slide_wnd_step_x;
-                }
-                y += self.slide_wnd_step_y;
+                },
+                None => break,
             }
+            image_scaled_optional = image.get_next_scale_image(&mut scale_factor);
         }
 
-/*
-while (img_scaled != nullptr) {
-    feat_map_1->Compute(img_scaled->data, img_scaled->width,
-      img_scaled->height);
 
-    wnd_info.bbox.width = static_cast<int32_t>(wnd_size_ / scale_factor + 0.5);
-    wnd_info.bbox.height = wnd_info.bbox.width;
 
-    int32_t max_x = img_scaled->width - wnd_size_;
-    int32_t max_y = img_scaled->height - wnd_size_;
-    for (int32_t y = 0; y <= max_y; y += slide_wnd_step_y_) {
-      wnd.y = y;
-      for (int32_t x = 0; x <= max_x; x += slide_wnd_step_x_) {
-        wnd.x = x;
-        feat_map_1->SetROI(wnd);
-
-        wnd_info.bbox.x = static_cast<int32_t>(x / scale_factor + 0.5);
-        wnd_info.bbox.y = static_cast<int32_t>(y / scale_factor + 0.5);
-
-        for (int32_t i = 0; i < hierarchy_size_[0]; i++) {
-          if (model_[i]->Classify(&score)) {
-            wnd_info.score = static_cast<double>(score);
-            proposals[i].push_back(wnd_info);
+        /*
+        std::vector<std::vector<seeta::FaceInfo> > proposals_nms(hierarchy_size_[0]);
+          for (int32_t i = 0; i < hierarchy_size_[0]; i++) {
+            seeta::fd::NonMaximumSuppression(&(proposals[i]),
+              &(proposals_nms[i]), 0.8f);
+            proposals[i].clear();
           }
-        }
-      }
-    }
 
-    img_scaled = img_pyramid->GetNextScaleImage(&scale_factor);
-  }
-
-*/
-
+        */
 
 
 
