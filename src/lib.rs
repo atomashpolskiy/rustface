@@ -15,6 +15,11 @@ use model::Model;
 
 trait Detector {
     fn detect(&mut self, image: &mut ImageData) -> Vec<FaceInfo>;
+    fn set_window_size(&mut self, wnd_size: u32);
+    fn set_slide_window_step(&mut self, step_x: u32, step_y: u32);
+    fn set_min_face_size(&mut self, min_face_size: u32);
+    fn set_max_face_size(&mut self, max_face_size: u32);
+    fn set_pyramid_scale_factor(&mut self, scale_factor: f32);
 }
 
 impl Detector for FuStDetector {
@@ -32,46 +37,14 @@ impl Detector for FuStDetector {
 
         let mut image_pyramid = ImagePyramid::new();
         image_pyramid.set_image_1x(image.data(), image.width(), image.height());
+        image_pyramid.set_max_scale(K_WND_SIZE / self.min_face_size as f32);
         image_pyramid.set_min_scale(K_WND_SIZE / min_img_size as f32);
+        image_pyramid.set_scale_step(self.image_pyramid_scale_factor);
         self.set_window_size(K_WND_SIZE as u32);
 
         self.detect_impl(&mut image_pyramid).into_iter()
             .filter(|x| x.score() >= self.cls_thresh)
             .collect()
-    }
-}
-
-fn is_legal_image(image: &ImageData) -> bool {
-    image.num_channels() == 1 && image.width() > 0 && image.height() > 0
-}
-
-struct FuStDetector {
-    model: Model,
-    wnd_data_buf: Vec<u8>,
-    wnd_data: Vec<u8>,
-    wnd_size: u32,
-    slide_wnd_step_x: u32,
-    slide_wnd_step_y: u32,
-    max_face_size: i32,
-    cls_thresh: f64,
-}
-
-impl FuStDetector {
-    fn new(model: Model) -> Self {
-        let wnd_size = 40;
-        let slide_wnd_step_x = 4;
-        let slide_wnd_step_y = 4;
-
-        FuStDetector {
-            model,
-            wnd_data_buf: Vec::with_capacity((wnd_size * wnd_size) as usize),
-            wnd_data: Vec::with_capacity((wnd_size * wnd_size) as usize),
-            wnd_size,
-            slide_wnd_step_x,
-            slide_wnd_step_y,
-            max_face_size: -1,
-            cls_thresh: 3.85,
-        }
     }
 
     fn set_window_size(&mut self, wnd_size: u32) {
@@ -89,8 +62,60 @@ impl FuStDetector {
         }
     }
 
+    fn set_min_face_size(&mut self, min_face_size: u32) {
+        if min_face_size < 20 {
+            panic!("Illegal min face size");
+        }
+        self.min_face_size = min_face_size as i32;
+    }
+
     fn set_max_face_size(&mut self, max_face_size: u32) {
         self.max_face_size = max_face_size as i32;
+    }
+
+    fn set_pyramid_scale_factor(&mut self, scale_factor: f32) {
+        if scale_factor < 0.01 || scale_factor > 0.99 {
+            panic!("Illegal scale factor");
+        }
+        self.image_pyramid_scale_factor = scale_factor;
+    }
+}
+
+fn is_legal_image(image: &ImageData) -> bool {
+    image.num_channels() == 1 && image.width() > 0 && image.height() > 0
+}
+
+struct FuStDetector {
+    model: Model,
+    wnd_data_buf: Vec<u8>,
+    wnd_data: Vec<u8>,
+    wnd_size: u32,
+    slide_wnd_step_x: u32,
+    slide_wnd_step_y: u32,
+    min_face_size: i32,
+    max_face_size: i32,
+    cls_thresh: f64,
+    image_pyramid_scale_factor: f32,
+}
+
+impl FuStDetector {
+    fn new(model: Model) -> Self {
+        let wnd_size = 40;
+        let slide_wnd_step_x = 4;
+        let slide_wnd_step_y = 4;
+
+        FuStDetector {
+            model,
+            wnd_data_buf: Vec::with_capacity((wnd_size * wnd_size) as usize),
+            wnd_data: Vec::with_capacity((wnd_size * wnd_size) as usize),
+            wnd_size,
+            slide_wnd_step_x,
+            slide_wnd_step_y,
+            min_face_size: 20,
+            max_face_size: -1,
+            cls_thresh: 3.85,
+            image_pyramid_scale_factor: 0.8,
+        }
     }
 
     fn get_window_data(&mut self, img: &ImageData, wnd: &mut Rectangle) {
