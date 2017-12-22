@@ -34,8 +34,16 @@ impl Rectangle {
         self.width
     }
 
+    pub fn set_width(&mut self, width: u32) {
+        self.width = width;
+    }
+
     pub fn height(&self) -> u32 {
         self.height
+    }
+
+    pub fn set_height(&mut self, height: u32) {
+        self.height = height;
     }
 }
 
@@ -45,4 +53,20 @@ pub struct FaceInfo {
     pitch: f64,
     yaw: f64,
     score: f64,
+}
+
+impl FaceInfo {
+    pub fn new() -> Self {
+        FaceInfo {
+            bbox: Rectangle::new(0, 0, 0, 0),
+            roll: 0.0,
+            pitch: 0.0,
+            yaw: 0.0,
+            score: 0.0,
+        }
+    }
+
+    pub fn bbox_mut(&mut self) -> &mut Rectangle {
+        &mut self.bbox
+    }
 }

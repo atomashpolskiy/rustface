@@ -27,6 +27,10 @@ impl FeatureMap for LabBoostedFeatureMap {
         self.compute_rect_sum();
         self.compute_feature_map();
     }
+
+    fn set_roi(&mut self, roi: Rectangle) {
+        self.roi = Some(roi);
+    }
 }
 
 impl LabBoostedFeatureMap {

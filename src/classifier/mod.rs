@@ -4,6 +4,8 @@ mod surf_mlp_classifier;
 pub use self::lab_boosted_classifier::LabBoostedClassifier;
 pub use self::surf_mlp_classifier::SurfMlpClassifier;
 
+use common::{ImageData, Rectangle};
+
 #[derive(Debug, Hash, PartialEq, Eq, Clone)]
 pub enum ClassifierKind {
     LabBoosted,
@@ -36,5 +38,7 @@ impl Score {
 }
 
 pub trait Classifier {
+    fn compute(&mut self, image: &ImageData);
+    fn set_roi(&mut self, roi: Rectangle);
     fn classify(&mut self, output: &mut Vec<f32>) -> Score;
 }

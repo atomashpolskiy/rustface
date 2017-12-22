@@ -2,7 +2,8 @@ use std::rc::Rc;
 use std::cell::RefCell;
 
 use super::{Classifier, Score};
-use feat::LabBoostedFeatureMap;
+use common::{ImageData, Rectangle};
+use feat::{FeatureMap, LabBoostedFeatureMap};
 
 pub struct LabBoostedClassifier {
     feature_map: Rc<RefCell<LabBoostedFeatureMap>>,
@@ -58,5 +59,13 @@ impl Classifier for LabBoostedClassifier {
         positive = positive && ((*self.feature_map).borrow().get_std_dev() > K_STDDEV_THRESH);
 
         Score { positive, score }
+    }
+
+    fn compute(&mut self, image: &ImageData) {
+        (*self.feature_map).borrow_mut().compute(image.data(), image.width(), image.height());
+    }
+
+    fn set_roi(&mut self, roi: Rectangle) {
+        (*self.feature_map).borrow_mut().set_roi(roi);
     }
 }

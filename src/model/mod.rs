@@ -11,6 +11,7 @@ use feat::{LabBoostedFeatureMap, SurfMlpFeatureMap};
 pub struct Model {
     classifiers: Vec<Box<Classifier>>,
     wnd_src_id: Vec<Vec<i32>>,
+    hierarchy_sizes: Vec<i32>,
 }
 
 impl Model {
@@ -18,7 +19,16 @@ impl Model {
         Model {
             classifiers: vec![],
             wnd_src_id: vec![],
+            hierarchy_sizes: vec![],
         }
+    }
+
+    pub fn get_classifiers(&mut self) -> &mut Vec<Box<Classifier>> {
+        &mut self.classifiers
+    }
+
+    pub fn get_hierarchy_sizes(&self) -> &[i32] {
+        &self.hierarchy_sizes
     }
 }
 
@@ -48,13 +58,13 @@ impl ModelReader {
     pub fn read(mut self) -> Result<Model, io::Error> {
         let mut model: Model = Model::new();
 
-        let num_hierarchy = self.read_i32()?;
-        let mut hierarchy_sizes = Vec::with_capacity(num_hierarchy as usize);
-        let mut num_stages = Vec::with_capacity(hierarchy_sizes.len() * 4);
+        let num_hierarchy = self.read_i32()? as usize;
+        model.hierarchy_sizes.resize(num_hierarchy, 0);
+        let mut num_stages = Vec::with_capacity(num_hierarchy * 4);
 
         for _ in 0..num_hierarchy {
             let hierarchy_size = self.read_i32()?;
-            hierarchy_sizes.push(hierarchy_size);
+            model.hierarchy_sizes.push(hierarchy_size);
 
             for _ in 0..hierarchy_size {
                 let num_stage = self.read_i32()?;

@@ -3,7 +3,8 @@ use std::rc::Rc;
 use math;
 
 use super::{Classifier, Score};
-use feat::SurfMlpFeatureMap;
+use common::{ImageData, Rectangle};
+use feat::{FeatureMap, SurfMlpFeatureMap};
 use std::ptr;
 use std::cell::RefCell;
 
@@ -195,5 +196,13 @@ impl Classifier for SurfMlpClassifier {
         }
 
         score
+    }
+
+    fn compute(&mut self, image: &ImageData) {
+        (*self.feature_map).borrow_mut().compute(image.data(), image.width(), image.height());
+    }
+
+    fn set_roi(&mut self, roi: Rectangle) {
+        (*self.feature_map).borrow_mut().set_roi(roi);
     }
 }

@@ -30,6 +30,10 @@ impl FeatureMap for SurfMlpFeatureMap {
         self.compute_gradient_images(input);
         self.compute_integral_images();
     }
+
+    fn set_roi(&mut self, roi: Rectangle) {
+        self.roi = Some(roi);
+    }
 }
 
 impl SurfMlpFeatureMap {
