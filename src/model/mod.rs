@@ -12,6 +12,7 @@ pub struct Model {
     classifiers: Vec<Box<Classifier>>,
     wnd_src_id: Vec<Vec<i32>>,
     hierarchy_sizes: Vec<i32>,
+    num_stages: Vec<i32>,
 }
 
 impl Model {
@@ -20,6 +21,7 @@ impl Model {
             classifiers: vec![],
             wnd_src_id: vec![],
             hierarchy_sizes: vec![],
+            num_stages: vec![],
         }
     }
 
@@ -33,6 +35,10 @@ impl Model {
 
     pub fn get_hierarchy_count(&self) -> usize {
         self.hierarchy_sizes.len()
+    }
+
+    pub fn get_num_stage(&self, id: usize) -> i32 {
+        self.num_stages[id]
     }
 
     pub fn get_hierarchy_size(&self, hierarchy_index: usize) -> i32 {
@@ -68,7 +74,7 @@ impl ModelReader {
 
         let num_hierarchy = self.read_i32()? as usize;
         model.hierarchy_sizes.resize(num_hierarchy, 0);
-        let mut num_stages = Vec::with_capacity(num_hierarchy * 4);
+        model.num_stages.resize(num_hierarchy * 4, 0);
 
         for _ in 0..num_hierarchy {
             let hierarchy_size = self.read_i32()?;
@@ -76,7 +82,7 @@ impl ModelReader {
 
             for _ in 0..hierarchy_size {
                 let num_stage = self.read_i32()?;
-                num_stages.push(num_stage);
+                model.num_stages.push(num_stage);
 
                 for _ in 0..num_stage {
                     let classifier_kind_id = self.read_i32()?;

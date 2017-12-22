@@ -99,6 +99,10 @@ impl ImagePyramid {
         }
     }
 
+    pub fn get_image_1x(&self) -> ImageData {
+        ImageData::new(self.img_buf.as_ptr(), self.width1x, self.height1x)
+    }
+
     pub fn set_image_1x(&mut self, img_data: *const u8, width: u32, height: u32) {
         if width > self.img_buf_width || height > self.img_buf_height {
             self.img_buf_width = width;
