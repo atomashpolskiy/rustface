@@ -13,7 +13,12 @@ use std::rc::Rc;
 use common::{FaceInfo, ImageData, ImagePyramid, Rectangle};
 use model::Model;
 
-trait Detector {
+pub fn create_detector(path_to_model: &str) -> Box<Detector> {
+    let model = model::load_model("seeta_fd_frontal_v1.0.bin").expect("Failed to load model");
+    Box::new(FuStDetector::new(model))
+}
+
+pub trait Detector {
     fn detect(&mut self, image: &mut ImageData) -> Vec<FaceInfo>;
     fn set_window_size(&mut self, wnd_size: u32);
     fn set_slide_window_step(&mut self, step_x: u32, step_y: u32);
