@@ -6,16 +6,19 @@ mod feat;
 mod classifier;
 pub mod model;
 
-use std::{cmp, ptr};
+pub use common::ImageData;
+pub use common::FaceInfo;
+
+use std::{cmp, io, ptr};
 use std::cmp::Ordering::*;
 use std::cell::RefCell;
 use std::rc::Rc;
-use common::{FaceInfo, ImageData, ImagePyramid, Rectangle};
+use common::{ImagePyramid, Rectangle};
 use model::Model;
 
-pub fn create_detector(path_to_model: &str) -> Box<Detector> {
-    let model = model::load_model("seeta_fd_frontal_v1.0.bin").expect("Failed to load model");
-    Box::new(FuStDetector::new(model))
+pub fn create_detector(path_to_model: &str) -> Result<Box<Detector>, io::Error> {
+    let model = model::load_model(path_to_model)?;
+    Ok(Box::new(FuStDetector::new(model)))
 }
 
 pub trait Detector {
@@ -25,6 +28,7 @@ pub trait Detector {
     fn set_min_face_size(&mut self, min_face_size: u32);
     fn set_max_face_size(&mut self, max_face_size: u32);
     fn set_pyramid_scale_factor(&mut self, scale_factor: f32);
+    fn set_score_thresh(&mut self, thresh: f64);
 }
 
 impl Detector for FuStDetector {
@@ -83,6 +87,13 @@ impl Detector for FuStDetector {
             panic!("Illegal scale factor");
         }
         self.image_pyramid_scale_factor = scale_factor;
+    }
+
+    fn set_score_thresh(&mut self, thresh: f64) {
+        if thresh <= 0.0 {
+            panic!("Illegal value");
+        }
+        self.cls_thresh = thresh;
     }
 }
 

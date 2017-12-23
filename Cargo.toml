@@ -5,3 +5,4 @@ authors = ["Andrei Tomashpolskiy <nordmann89@gmail.com>"]
 
 [dependencies]
 byteorder = "1.2.1"
+#opencv = "0.2.3"
