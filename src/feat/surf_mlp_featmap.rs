@@ -1,4 +1,4 @@
-use common::Rectangle;
+use common::{Rectangle, Seq};
 use feat::FeatureMap;
 use math;
 
@@ -465,8 +465,9 @@ impl FeaturePool {
 
         if self.sample_height - self.patch_min_height <= self.sample_width - self.patch_min_width {
             for ref format in self.patch_formats.iter() {
-                let mut h = self.patch_min_height;
-                while h <= self.sample_height {
+                for h in Seq::new(self.patch_min_height, |x| x + self.patch_size_inc_step)
+                    .take_while(|x| *x <= self.sample_height) {
+
                     if h % format.num_cell_per_col != 0 || h % format.height != 0 {
                         continue;
                     }
@@ -475,15 +476,15 @@ impl FeaturePool {
                         continue;
                     }
                     self.collect_features(w, h, format.num_cell_per_row, format.num_cell_per_col, &mut feature_vecs);
-                    h += self.patch_size_inc_step;
                 }
             }
         } else {
             for ref format in self.patch_formats.iter() {
-                let mut w = self.patch_min_width;
                 // original condition was <= self.patch_min_width,
                 // but it would not make sense to have a loop in such case
-                while w <= self.sample_width {
+                for w in Seq::new(self.patch_min_width, |x| x + self.patch_size_inc_step)
+                    .take_while(|x| *x <= self.sample_width) {
+
                     if w % format.num_cell_per_row != 0 || w % format.width != 0 {
                         continue;
                     }
@@ -492,7 +493,6 @@ impl FeaturePool {
                         continue;
                     }
                     self.collect_features(w, h, format.num_cell_per_row, format.num_cell_per_col, &mut feature_vecs);
-                    w += self.patch_size_inc_step;
                 }
             }
         }

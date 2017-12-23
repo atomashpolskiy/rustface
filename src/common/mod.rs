@@ -93,7 +93,7 @@ pub struct Seq<T, G> where G: Fn(&T) -> T + Sized {
 impl<T, G> Seq<T, G>
     where G: Fn(&T) -> T + Sized {
 
-    fn new(first_element: T, generator: G) -> Self {
+    pub fn new(first_element: T, generator: G) -> Self {
         Seq {
             generator,
             next: first_element,
