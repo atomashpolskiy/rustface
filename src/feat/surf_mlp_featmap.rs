@@ -44,8 +44,8 @@ impl SurfMlpFeatureMap {
         let mut feature_vectors_normalized = Vec::with_capacity(feature_pool_size);
         for feature_id in 0..feature_pool_size {
             let dim = feature_pool.get_feature_vector_dim(feature_id);
-            feature_vectors[feature_id] = Vec::with_capacity(dim);
-            feature_vectors_normalized[feature_id] = Vec::with_capacity(dim);
+            feature_vectors.push(Vec::with_capacity(dim));
+            feature_vectors_normalized.push(Vec::with_capacity(dim));
         }
         let feature_valid_indicators = Vec::with_capacity(feature_pool_size);
 
