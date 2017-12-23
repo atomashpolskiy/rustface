@@ -1,5 +1,7 @@
 mod image_pyramid;
 
+use std::mem;
+
 pub use self::image_pyramid::{ImageData, ImagePyramid, resize_image};
 
 pub struct Rectangle {
@@ -80,5 +82,50 @@ impl FaceInfo {
 
     pub fn score(&self) -> f64 {
         self.score
+    }
+}
+
+pub struct Seq<T, G> where G: Fn(&T) -> T + Sized {
+    generator: G,
+    next: T,
+}
+
+impl<T, G> Seq<T, G>
+    where G: Fn(&T) -> T + Sized {
+
+    fn new(first_element: T, generator: G) -> Self {
+        Seq {
+            generator,
+            next: first_element,
+        }
+    }
+}
+
+impl<T, G> Iterator for Seq<T, G>
+    where G: Fn(&T) -> T + Sized {
+
+    type Item = T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let next = (self.generator)(&self.next);
+        let current = mem::replace(&mut self.next, next);
+        Some(current)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Seq;
+
+    #[test]
+    pub fn test_seq_take() {
+        let seq = Seq::new(0, |x| x + 1);
+        assert_eq!(vec![0, 1, 2, 3, 4], seq.take(5).collect::<Vec<i32>>());
+    }
+
+    #[test]
+    pub fn test_seq_take_while() {
+        let seq = Seq::new(0, |x| x + 1);
+        assert_eq!(vec![0, 1, 2, 3, 4], seq.take_while(|x| *x < 5).collect::<Vec<i32>>());
     }
 }
