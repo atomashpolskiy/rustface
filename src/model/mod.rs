@@ -73,8 +73,6 @@ impl ModelReader {
         let mut model: Model = Model::new();
 
         let num_hierarchy = self.read_i32()? as usize;
-        model.hierarchy_sizes.resize(num_hierarchy, 0);
-        model.num_stages.resize(num_hierarchy * 4, 0);
 
         for _ in 0..num_hierarchy {
             let hierarchy_size = self.read_i32()?;

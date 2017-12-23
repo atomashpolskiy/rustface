@@ -1,10 +1,11 @@
 extern crate rustface;
-//extern crate opencv;
+extern crate opencv;
 
 use std::env::Args;
-use std::fs::File;
-use std::io;
-use std::io::{Error, Read};
+
+use opencv::core::Mat;
+use opencv::highgui::{imread, IMREAD_UNCHANGED};
+use opencv::imgproc::{cvt_color, COLOR_BGR2GRAY};
 
 use rustface::ImageData;
 
@@ -30,55 +31,43 @@ fn main() {
     detector.set_pyramid_scale_factor(0.8);
     detector.set_slide_window_step(4, 4);
 
-    let mut buf = Vec::new();
-    if let Err(error) = options.image().read_to_end(&mut buf) {
-        println!("Failed to read image: {}", error.to_string());
-        std::process::exit(1);
+    let mut image: Mat = match imread(&options.image_path(), IMREAD_UNCHANGED) {
+        Ok(image) => image,
+        Err(message) => {
+            println!("Failed to read image: {}", message);
+            std::process::exit(1);
+        }
+    };
+
+    if image.channels().unwrap() != 1 {
+        cvt_color(&image, &image, COLOR_BGR2GRAY, 0).expect("Failed to convert image to gray scale");
     }
-    let mut image = ImageData::new(buf.as_ptr(), options.image_width(), options.image_height());
-    let faceinfo = detector.detect(&mut image);
+
+    let image_size = image.size().unwrap();
+    let mut image = ImageData::new(image.ptr0(0).unwrap(), image_size.width as u32, image_size.height as u32);
+    detector.detect(&mut image);
 }
 
 struct Options {
-    image: File,
+    image_path: String,
     model_path: String,
-    image_width: u32,
-    image_height: u32,
 }
 
 impl Options {
     fn parse(args: Args) -> Result<Self, String> {
         let args: Vec<String> = args.into_iter().collect();
         if args.len() != 5 {
-            return Err(format!("Usage: {} <model-path> <image-path> <width> <height>", args[0]))
+            return Err(format!("Usage: {} <model-path> <image-path>", args[0]))
         }
 
         let model_path = args[1].clone();
-        let image_path = Options::open_file(&args[2])?;
-        let image_width: u32 = Options::parse_int(&args[3])? as u32;
-        let image_height: u32 = Options::parse_int(&args[4])? as u32;
+        let image_path = args[2].clone();
 
-        Ok(Options { image: image_path, model_path, image_width, image_height })
+        Ok(Options { image_path, model_path })
     }
 
-    fn open_file(path: &String) -> Result<File, String> {
-        File::open(path).map_err(|e| e.to_string())
-    }
-
-    fn parse_int(s: &String) -> Result<i32, String> {
-        s.parse::<i32>().map_err(|e| e.to_string())
-    }
-
-    fn image(&self) -> &File {
-        &self.image
-    }
-
-    fn image_width(&self) -> u32 {
-        self.image_width
-    }
-
-    fn image_height(&self) -> u32 {
-        self.image_height
+    fn image_path(&self) -> &str {
+        &self.image_path[..]
     }
 
     fn model_path(&self) -> &str {

@@ -173,7 +173,7 @@ impl FuStDetector {
 
         match (pad_left, pad_right) {
             (0, 0) => {
-                for y in pad_top..(roi_height - pad_bottom) {
+                for _y in pad_top..(roi_height - pad_bottom) {
                     unsafe {
                         ptr::copy_nonoverlapping(src, dest, len);
                         src = src.offset(img_width as isize);
@@ -182,7 +182,7 @@ impl FuStDetector {
                 }
             },
             (0, _) => {
-                for y in pad_top..(roi_height - pad_bottom) {
+                for _y in pad_top..(roi_height - pad_bottom) {
                     unsafe {
                         ptr::copy_nonoverlapping(src, dest, len2);
                         src = src.offset(img_width as isize);
@@ -192,7 +192,7 @@ impl FuStDetector {
                 }
             },
             (_, 0) => {
-                for y in pad_top..(roi_height - pad_bottom) {
+                for _y in pad_top..(roi_height - pad_bottom) {
                     unsafe {
                         ptr::write_bytes(dest, 0, pad_left as usize);
                         ptr::copy_nonoverlapping(src, dest.offset(pad_left as isize), len2);
@@ -202,7 +202,7 @@ impl FuStDetector {
                 }
             },
             (_, _) => {
-                for y in pad_top..(roi_height - pad_bottom) {
+                for _y in pad_top..(roi_height - pad_bottom) {
                     unsafe {
                         ptr::write_bytes(dest, 0, pad_left as usize);
                         ptr::copy_nonoverlapping(src, dest.offset(pad_left as isize), len2);
