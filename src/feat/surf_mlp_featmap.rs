@@ -44,10 +44,10 @@ impl SurfMlpFeatureMap {
         let mut feature_vectors_normalized = Vec::with_capacity(feature_pool_size);
         for feature_id in 0..feature_pool_size {
             let dim = feature_pool.get_feature_vector_dim(feature_id);
-            feature_vectors.push(Vec::with_capacity(dim));
-            feature_vectors_normalized.push(Vec::with_capacity(dim));
+            feature_vectors.push(vec![0; dim]);
+            feature_vectors_normalized.push(vec![0.0; dim]);
         }
-        let feature_valid_indicators = Vec::with_capacity(feature_pool_size);
+        let feature_valid_indicators = vec![false; feature_pool_size];
 
         SurfMlpFeatureMap {
             roi: None,
@@ -239,10 +239,13 @@ impl SurfMlpFeatureMap {
         let cell_width: isize = (feature.patch.width() / feature.num_cell_per_row) as isize * k_num_int_channel;
         let cell_height: isize = (feature.patch.height() / feature.num_cell_per_col) as isize;
         let row_width: isize = (self.width as isize) * k_num_int_channel;
-        let mut cell_top_left: Vec<*const i32> = Vec::with_capacity(k_num_int_channel as usize);
-        let mut cell_top_right: Vec<*const i32> = Vec::with_capacity(k_num_int_channel as usize);
-        let mut cell_bottom_left: Vec<*const i32> = Vec::with_capacity(k_num_int_channel as usize);
-        let mut cell_bottom_right: Vec<*const i32> = Vec::with_capacity(k_num_int_channel as usize);
+
+        let foo = 0;
+        let mut cell_top_left: Vec<*const i32> = vec![&foo; k_num_int_channel as usize];
+        let mut cell_top_right: Vec<*const i32> = vec![&foo; k_num_int_channel as usize];
+        let mut cell_bottom_left: Vec<*const i32> = vec![&foo; k_num_int_channel as usize];
+        let mut cell_bottom_right: Vec<*const i32> = vec![&foo; k_num_int_channel as usize];
+
         let mut feature_value: *mut i32 = feature_vec;
         let int_img_ptr = self.int_img.as_ptr();
         let mut offset: isize;
@@ -288,7 +291,7 @@ impl SurfMlpFeatureMap {
                 }
             },
             (0, _) => {
-                let mut tmp_cell_top_right: Vec<*const i32> = Vec::with_capacity(k_num_int_channel as usize);
+                let mut tmp_cell_top_right: Vec<*const i32> = vec![&foo; k_num_int_channel as usize];
 
                 offset = row_width * ((init_cell_y - 1) as isize) + cell_width - k_num_int_channel;
                 for i in 0..k_num_int_channel as usize {
@@ -316,7 +319,7 @@ impl SurfMlpFeatureMap {
                 }
             },
             (_, _) => {
-                let mut tmp_cell_top_right: Vec<*const i32> = Vec::with_capacity(k_num_int_channel as usize);
+                let mut tmp_cell_top_right: Vec<*const i32> = vec![&foo; k_num_int_channel as usize];
 
                 offset = row_width * ((init_cell_y - 1) as isize) + (init_cell_x - 1) as isize * k_num_int_channel;
                 for i in 0..k_num_int_channel as usize {

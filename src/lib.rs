@@ -47,7 +47,8 @@ impl Detector for FuStDetector {
 
         let mut image_pyramid = ImagePyramid::new();
         image_pyramid.set_image_1x(image.data(), image.width(), image.height());
-        image_pyramid.set_max_scale(K_WND_SIZE / self.min_face_size as f32);
+        // TODO: uncomment
+//        image_pyramid.set_max_scale(K_WND_SIZE / self.min_face_size as f32);
         image_pyramid.set_min_scale(K_WND_SIZE / min_img_size as f32);
         image_pyramid.set_scale_step(self.image_pyramid_scale_factor);
         self.set_window_size(K_WND_SIZE as u32);
@@ -231,8 +232,14 @@ impl FuStDetector {
 
         let wnd_info = Rc::new(RefCell::new(FaceInfo::new()));
         let first_hierarchy_size = self.model.get_hierarchy_size(0) as usize;
-        let mut proposals: Vec<Rc<RefCell<Vec<Rc<RefCell<FaceInfo>>>>>> = vec![Rc::new(RefCell::new(vec![])); first_hierarchy_size];
-        let mut proposals_nms: Vec<Rc<RefCell<Vec<Rc<RefCell<FaceInfo>>>>>> = vec![Rc::new(RefCell::new(vec![])); first_hierarchy_size];
+        let mut proposals: Vec<Rc<RefCell<Vec<Rc<RefCell<FaceInfo>>>>>> = Vec::with_capacity(first_hierarchy_size);
+        for _ in 0..first_hierarchy_size {
+            proposals.push(Rc::new(RefCell::new(vec![])));
+        }
+        let mut proposals_nms: Vec<Rc<RefCell<Vec<Rc<RefCell<FaceInfo>>>>>> = Vec::with_capacity(first_hierarchy_size);
+        for _ in 0..first_hierarchy_size {
+            proposals_nms.push(Rc::new(RefCell::new(vec![])));
+        }
 
         loop {
             match image_scaled_optional {

@@ -161,12 +161,12 @@ impl Classifier for SurfMlpClassifier {
     fn classify(&mut self, output: Option<&mut Vec<f32>>) -> Score {
         if let None = self.input_buf {
             let input_layer = self.layers.get(0).expect("No layers");
-            self.input_buf = Some(Vec::with_capacity(input_layer.input_size()));
+            self.input_buf = Some(vec![0.0; input_layer.input_size()]);
         }
         if let None = self.output_buf {
             let num_layers = self.layers.len();
             let output_layer = self.layers.get(num_layers - 1).expect("No layers");
-            self.output_buf = Some(Vec::with_capacity(output_layer.output_size()));
+            self.output_buf = Some(vec![0.0; output_layer.output_size()]);
         }
 
         {
