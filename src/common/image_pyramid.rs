@@ -66,10 +66,10 @@ impl ImagePyramid {
         let img_buf_scaled_height: u32 = 2;
 
         ImagePyramid {
-            max_scale: 1f32,
-            min_scale: 1f32,
-            scale_factor: 1f32,
-            scale_step: 0.8f32,
+            max_scale: 1.0,
+            min_scale: 1.0,
+            scale_factor: 1.0,
+            scale_step: 0.8,
             width1x: 0,
             height1x: 0,
             width_scaled: 0,

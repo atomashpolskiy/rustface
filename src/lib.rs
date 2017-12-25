@@ -14,7 +14,7 @@ use std::{cmp, io, ptr};
 use std::cmp::Ordering::*;
 use std::cell::RefCell;
 use std::rc::Rc;
-use common::{ImagePyramid, Rectangle};
+use common::{ImagePyramid, Rectangle, Seq};
 use model::Model;
 
 pub fn create_detector(path_to_model: &str) -> Result<Box<Detector>, io::Error> {
@@ -243,13 +243,14 @@ impl FuStDetector {
                     wnd_info.borrow_mut().bbox_mut().set_width(width);
                     wnd_info.borrow_mut().bbox_mut().set_height(width);
 
-                    let mut x = 0;
-                    let mut y = 0;
+                    let step_x = self.slide_wnd_step_x;
+                    let step_y = self.slide_wnd_step_y;
                     let max_x = image_scaled.width() - self.wnd_size;
                     let max_y = image_scaled.height() - self.wnd_size;
 
-                    while y <= max_y {
-                        while x <= max_x {
+                    for y in Seq::new(0, move |n| n + step_y).take_while(move |n| *n <= max_y) {
+                        for x in Seq::new(0, move |n| n + step_x).take_while(move |n| *n <= max_x) {
+
                             self.model.get_classifiers()[0].set_roi(Rectangle::new(x as i32, y as i32, self.wnd_size, self.wnd_size));
 
                             wnd_info.borrow_mut().bbox_mut().set_x((x as f32 / scale_factor + 0.5) as i32);
@@ -259,12 +260,10 @@ impl FuStDetector {
                                 let score = (&mut *self.model.get_classifiers()[i]).classify(None);
                                 if score.is_positive() {
                                     wnd_info.borrow_mut().set_score(score.score() as f64);
-                                    proposals[i].borrow_mut().push(Rc::clone(&wnd_info));
+                                    proposals[i].borrow_mut().push(Rc::new(RefCell::new(wnd_info.borrow().clone())));
                                 }
                             }
-                            x += self.slide_wnd_step_x;
                         }
-                        y += self.slide_wnd_step_y;
                     }
                 },
                 None => break,

@@ -39,10 +39,10 @@ impl LabBoostedClassifier {
 impl Classifier for LabBoostedClassifier {
     fn classify(&mut self, _: Option<&mut Vec<f32>>) -> Score {
         const K_FEAT_GROUP_SIZE: usize = 10;
-        const K_STDDEV_THRESH: f64 = 10f64;
+        const K_STDDEV_THRESH: f64 = 10.0;
 
         let mut positive = true;
-        let mut score = 0f32;
+        let mut score: f32 = 0.0;
 
         let mut i = 0;
         while positive && i < self.base_classifiers.len() {

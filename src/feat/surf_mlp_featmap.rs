@@ -401,21 +401,21 @@ impl SurfMlpFeatureMap {
     }
 
     unsafe fn normalize_feature_vector(feature_vec: *const i32, feature_vec_normalized: *mut f32, length: usize) {
-        let mut prod = 0f64;
+        let mut prod: f64 = 0.0;
 
         for i in 0..length as isize {
             let value = *feature_vec.offset(i);
             prod += (value * value) as f64;
         }
 
-        if prod != 0f64 {
+        if prod != 0.0 {
             let norm = prod.sqrt() as f32;
             for i in 0..length as isize {
                 *feature_vec_normalized.offset(i) = *feature_vec.offset(i) as f32 / norm;
             }
         } else {
             for i in 0..length as isize {
-                *feature_vec_normalized.offset(i) = 0f32;
+                *feature_vec_normalized.offset(i) = 0.0;
             }
         }
     }
@@ -501,22 +501,18 @@ impl FeaturePool {
     }
 
     fn collect_features(&self, width: u32, height: u32, num_cell_per_row: u32, num_cell_per_col: u32, dest: &mut Vec<Feature>) {
-        let y_lim = (self.sample_height - height) as i32;
-        let x_lim = (self.sample_width - width) as i32;
+        let y_lim = self.sample_height - height;
+        let x_lim = self.sample_width - width;
 
-        let mut y = 0;
-        while y <= y_lim {
-            let mut x = 0;
-            while x <= x_lim {
+        for y in Seq::new(0, |n| n + self.patch_move_step_y).take_while(|n| *n <= y_lim) {
+            for x in Seq::new(0, |n| n + self.patch_move_step_x).take_while(|n| *n <= x_lim) {
                 dest.push(
                     Feature {
-                        patch: Rectangle::new(x, y, width, height),
+                        patch: Rectangle::new(x as i32, y as i32, width, height),
                         num_cell_per_row, num_cell_per_col
                     }
                 );
-                x += self.patch_move_step_x as i32;
             }
-            y += self.patch_move_step_y as i32;
         }
     }
 

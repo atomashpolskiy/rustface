@@ -105,8 +105,8 @@ impl LabBoostedFeatureMap {
                 let bottom_right = bottom_left + roi_width;
                 mean = (self.int_img[bottom_right as usize] - self.int_img[bottom_left as usize] +
                     self.int_img[top_left as usize] - self.int_img[top_right as usize]) as f64 / area;
-                m2 = (self.square_int_img[bottom_right as usize] - self.square_int_img[bottom_left as usize] +
-                    self.square_int_img[top_left as usize] - self.square_int_img[top_right as usize]) as f64 / area;
+                m2 = (self.square_int_img[bottom_right as usize].wrapping_sub(self.square_int_img[bottom_left as usize])
+                    .wrapping_add(self.square_int_img[top_left as usize]).wrapping_sub(self.square_int_img[top_right as usize])) as f64 / area;
             }
         }
 
@@ -179,7 +179,7 @@ impl LabBoostedFeatureMap {
                 rect_sum_ptr.offset(1),
                 width);
 
-            for i in 1..height {
+            for i in 1..(height + 1) {
                 let top_left = int_img_ptr.offset(((i - 1) * self.width) as isize);
                 let top_right = top_left.offset((self.rect_width - 1) as isize);
                 let bottom_left = top_left.offset((self.rect_height * self.width) as isize);
@@ -204,8 +204,8 @@ impl LabBoostedFeatureMap {
         let feat_map_ptr = self.feat_map.as_mut_ptr();
 
         unsafe {
-            for r in 0..height {
-                for c in 0..width {
+            for r in 0..(height + 1) {
+                for c in 0..(width + 1) {
                     let dest = feat_map_ptr.offset((r * self.width + c) as isize);
                     *dest = 0;
 

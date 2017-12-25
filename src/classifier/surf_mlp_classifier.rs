@@ -90,10 +90,10 @@ impl SurfMlpClassifier {
     }
 
     fn relu(x: f32) -> f32 {
-        if x > 0f32 {
+        if x > 0.0 {
             x
         } else {
-            0f32
+            0.0
         }
     }
 

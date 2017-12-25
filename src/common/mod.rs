@@ -4,6 +4,7 @@ use std::mem;
 
 pub use self::image_pyramid::{ImageData, ImagePyramid, resize_image};
 
+#[derive(Clone)]
 pub struct Rectangle {
     x: i32,
     y: i32,
@@ -49,6 +50,7 @@ impl Rectangle {
     }
 }
 
+#[derive(Clone)]
 pub struct FaceInfo {
     bbox: Rectangle,
     roll: f64,
