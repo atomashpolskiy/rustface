@@ -168,8 +168,8 @@ impl SurfMlpFeatureMap {
     }
 
     fn mask_integral_channel(&mut self) {
-        let grad_x_ptr = self.grad_x.as_ptr();
-        let grad_y_ptr = self.grad_y.as_ptr();
+        let mut grad_x_ptr = self.grad_x.as_ptr();
+        let mut grad_y_ptr = self.grad_y.as_ptr();
 
         let mut dx: i32;
         let mut dy: i32;
@@ -181,8 +181,10 @@ impl SurfMlpFeatureMap {
         let mut src = self.int_img.as_mut_ptr();
         unsafe {
             for _ in 0..self.length {
-                dx = *grad_x_ptr.offset(1);
-                dy = *grad_y_ptr.offset(1);
+                dx = *grad_x_ptr;
+                grad_x_ptr = grad_x_ptr.offset(1);
+                dy = *grad_y_ptr;
+                grad_y_ptr = grad_y_ptr.offset(1);
 
                 cmp = if dy < 0 { 0xffffffff } else { 0x0 };
                 for j in 0..4 {
