@@ -90,14 +90,14 @@ impl SurfMlpFeatureMap {
 
     fn compute_gradient_images(&mut self, input: *const u8) {
         unsafe {
-            math::copy_u8_to_i32(input, self.int_img.as_mut_ptr(), self.length);
+            math::copy_u8_to_i32(input, self.img_buf.as_mut_ptr(), self.length);
         }
         self.compute_grad_x();
         self.compute_grad_y();
     }
 
     fn compute_grad_x(&mut self) {
-        let input = self.int_img.as_ptr();
+        let input = self.img_buf.as_ptr();
         let dx = self.grad_x.as_mut_ptr();
         let len = (self.width - 2) as usize;
 
@@ -118,7 +118,7 @@ impl SurfMlpFeatureMap {
     }
 
     fn compute_grad_y(&mut self) {
-        let input = self.int_img.as_ptr();
+        let input = self.img_buf.as_ptr();
         let mut dy = self.grad_y.as_mut_ptr();
         let len = self.width as usize;
 

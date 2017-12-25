@@ -306,7 +306,7 @@ impl FuStDetector {
 
                     for k in 0..num_wnd_src {
                         for ref item in proposals_nms[wnd_src[k] as usize].borrow().iter() {
-                            let last_index = proposals[r].borrow().len() - 1;
+                            let last_index = proposals[r].borrow().len();
                             proposals[r].borrow_mut().insert(last_index, Rc::clone(item));
                         }
                     }
