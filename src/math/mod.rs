@@ -4,10 +4,10 @@ pub unsafe fn copy_u8_to_i32(src: *const u8, dest: *mut i32, length: usize) {
     }
 }
 
-pub unsafe fn square(src: *const i32, dest: *mut i32, length: usize) {
+pub unsafe fn square(src: *const i32, dest: *mut u32, length: usize) {
     for i in 0..length as isize {
         let value = *src.offset(i);
-        *dest.offset(i) = value * value;
+        *dest.offset(i) = i32::pow(value, 2) as u32;
     }
 }
 

@@ -137,7 +137,7 @@ impl ImagePyramid {
     }
 
     pub fn get_next_scale_image(&mut self, scale_factor: &mut f32) -> Option<ImageData> {
-        if *scale_factor < self.min_scale {
+        if self.scale_factor < self.min_scale {
             return None;
         }
 

@@ -1,3 +1,7 @@
+use num::integer::Integer;
+use num::traits::WrappingAdd;
+use num;
+
 use math;
 use common::Rectangle;
 use feat::FeatureMap;
@@ -10,7 +14,7 @@ pub struct LabBoostedFeatureMap {
     feat_map: Vec<u8>,
     rect_sum: Vec<i32>,
     int_img: Vec<i32>,
-    square_int_img: Vec<i32>,
+    square_int_img: Vec<u32>,
     rect_width: u32,
     rect_height: u32,
     num_rect: u32,
@@ -130,11 +134,12 @@ impl LabBoostedFeatureMap {
         }
     }
 
-    unsafe fn compute_integral(data: *mut i32, width: u32, height: u32) {
+    unsafe fn compute_integral<T: Integer + WrappingAdd + Copy>(data: *mut T, width: u32, height: u32) {
         let mut src = data;
         let mut dest = data;
         let mut dest_previous_row = dest;
 
+        *dest = *src;
         src = src.offset(1);
         for _ in 1..width {
             *dest.offset(1) = *dest + *src;
@@ -145,10 +150,12 @@ impl LabBoostedFeatureMap {
 
         dest = dest.offset(1);
         for _ in 1..height {
-            let mut s = 0;
+            let mut s: T = num::zero();
             for _ in 0..width {
-                s += *src;
-                *dest = *dest_previous_row + s;
+                s = s + *src;
+                // overflow does happen here for the list of squares..
+                // original code does not seem to worry about this though
+                *dest = (*dest_previous_row).wrapping_add(&s);
 
                 src = src.offset(1);
                 dest = dest.offset(1);

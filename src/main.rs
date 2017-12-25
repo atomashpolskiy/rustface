@@ -3,8 +3,8 @@ extern crate opencv;
 
 use std::env::Args;
 
-use opencv::core::Mat;
-use opencv::highgui::{imread, IMREAD_UNCHANGED};
+use opencv::core::{Mat, Rect, rectangle, Scalar};
+use opencv::highgui::{destroy_all_windows, imread, IMREAD_UNCHANGED, imshow, named_window, wait_key, WINDOW_AUTOSIZE};
 use opencv::imgproc::{cvt_color, COLOR_BGR2GRAY};
 
 use rustface::ImageData;
@@ -31,7 +31,7 @@ fn main() {
     detector.set_pyramid_scale_factor(0.8);
     detector.set_slide_window_step(4, 4);
 
-    let mut image: Mat = match imread(&options.image_path(), IMREAD_UNCHANGED) {
+    let mut mat: Mat = match imread(&options.image_path(), IMREAD_UNCHANGED) {
         Ok(image) => image,
         Err(message) => {
             println!("Failed to read image: {}", message);
@@ -39,13 +39,29 @@ fn main() {
         }
     };
 
-    if image.channels().unwrap() != 1 {
-        cvt_color(&image, &image, COLOR_BGR2GRAY, 0).expect("Failed to convert image to gray scale");
+    if mat.channels().unwrap() != 1 {
+        cvt_color(&mat, &mat, COLOR_BGR2GRAY, 0).expect("Failed to convert image to gray scale");
     }
 
-    let image_size = image.size().unwrap();
-    let mut image = ImageData::new(image.ptr0(0).unwrap(), image_size.width as u32, image_size.height as u32);
-    detector.detect(&mut image);
+    let image_size = mat.size().unwrap();
+    let mut image = ImageData::new(mat.ptr0(0).unwrap(), image_size.width as u32, image_size.height as u32);
+
+    let faces = detector.detect(&mut image);
+    println!("Found {} faces", faces.len());
+    for face in faces.into_iter() {
+        let rect = Rect {
+            x: face.bbox().x(),
+            y: face.bbox().y(),
+            width: face.bbox().width() as i32,
+            height: face.bbox().height() as i32,
+        };
+        rectangle(&mat, rect, Scalar {data: [0.0, 0.0, 255.0, 0.0]}, 4, 8, 0).unwrap();
+    }
+
+    named_window("Test", WINDOW_AUTOSIZE).unwrap();
+    imshow("Test", &mat).unwrap();
+    wait_key(0).unwrap();
+    destroy_all_windows().unwrap();
 }
 
 struct Options {
@@ -56,7 +72,7 @@ struct Options {
 impl Options {
     fn parse(args: Args) -> Result<Self, String> {
         let args: Vec<String> = args.into_iter().collect();
-        if args.len() != 5 {
+        if args.len() != 3 {
             return Err(format!("Usage: {} <model-path> <image-path>", args[0]))
         }
 

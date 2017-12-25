@@ -1,4 +1,5 @@
 extern crate byteorder;
+extern crate num;
 
 mod common;
 mod math;
@@ -230,8 +231,8 @@ impl FuStDetector {
 
         let wnd_info = Rc::new(RefCell::new(FaceInfo::new()));
         let first_hierarchy_size = self.model.get_hierarchy_size(0) as usize;
-        let mut proposals: Vec<Rc<RefCell<Vec<Rc<RefCell<FaceInfo>>>>>> = Vec::with_capacity(first_hierarchy_size);
-        let mut proposals_nms: Vec<Rc<RefCell<Vec<Rc<RefCell<FaceInfo>>>>>> = Vec::with_capacity(first_hierarchy_size);
+        let mut proposals: Vec<Rc<RefCell<Vec<Rc<RefCell<FaceInfo>>>>>> = vec![Rc::new(RefCell::new(vec![])); first_hierarchy_size];
+        let mut proposals_nms: Vec<Rc<RefCell<Vec<Rc<RefCell<FaceInfo>>>>>> = vec![Rc::new(RefCell::new(vec![])); first_hierarchy_size];
 
         loop {
             match image_scaled_optional {
@@ -350,12 +351,14 @@ impl FuStDetector {
 
                     proposals[r].borrow_mut().truncate(bbox_id);
 
-                    if k < (k_max - 1) {
-                        non_maximum_suppression(proposals[r].borrow_mut().as_mut(), proposals_nms[r].borrow_mut().as_mut(), 0.8);
-                        proposals[r] = Rc::clone(&proposals_nms[r]);
-                    } else if i == (self.model.get_hierarchy_count() - 1) {
-                        non_maximum_suppression(proposals[r].borrow_mut().as_mut(), proposals_nms[r].borrow_mut().as_mut(), 0.3);
-                        proposals[r] = Rc::clone(&proposals_nms[r]);
+                    if proposals[r].as_ptr() != proposals_nms[r].as_ptr() {
+                        if k < (k_max - 1) {
+                            non_maximum_suppression(proposals[r].borrow_mut().as_mut(), proposals_nms[r].borrow_mut().as_mut(), 0.8);
+                            proposals[r] = Rc::clone(&proposals_nms[r]);
+                        } else if i == (self.model.get_hierarchy_count() - 1) {
+                            non_maximum_suppression(proposals[r].borrow_mut().as_mut(), proposals_nms[r].borrow_mut().as_mut(), 0.3);
+                            proposals[r] = Rc::clone(&proposals_nms[r]);
+                        }
                     }
 
                     model_idx += 1;
@@ -368,6 +371,10 @@ impl FuStDetector {
                 proposals_nms[j] = Rc::clone(&proposals[j]);
             }
         }
+
+        // drop duplicate refs..
+        drop(proposals);
+        proposals_nms.truncate(1);
 
         proposals_nms.into_iter().take(1)
             .map(|rc| Rc::try_unwrap(rc).and_then(|cell| Ok(cell.into_inner())).ok().unwrap())
@@ -394,10 +401,10 @@ fn non_maximum_suppression(bboxes: &mut Vec<Rc<RefCell<FaceInfo>>>, bboxes_nms: 
     });
 
     let mut select_idx = 0;
-    let mut mask_merged = Vec::with_capacity(bboxes.len());
+    let mut mask_merged = vec![false; bboxes.len()];
 
     loop {
-        while select_idx < bboxes.len() && mask_merged[select_idx] == 1 {
+        while select_idx < bboxes.len() && mask_merged[select_idx] {
             select_idx += 1;
         }
 
@@ -406,43 +413,53 @@ fn non_maximum_suppression(bboxes: &mut Vec<Rc<RefCell<FaceInfo>>>, bboxes_nms: 
         }
 
         bboxes_nms.push(Rc::clone(&bboxes[select_idx]));
-        mask_merged[select_idx] = 1;
+        mask_merged[select_idx] = true;
 
-        let select_bbox_ref = bboxes[select_idx].borrow();
-        let select_bbox = select_bbox_ref.bbox();
-        let area1 = (select_bbox.width() * select_bbox.height()) as f32;
-        let x1 = select_bbox.x();
-        let y1 = select_bbox.y();
-        let x2 = select_bbox.x() + select_bbox.width() as i32 - 1;
-        let y2 = select_bbox.y() + select_bbox.height() as i32 - 1;
+        let mut score;
+        {
+            score = bboxes_nms.last().unwrap().borrow().score();
+        }
+
+        let area1;
+        let x1;
+        let y1;
+        let x2;
+        let y2;
+        {
+            area1 = (bboxes[select_idx].borrow().bbox().width() * bboxes[select_idx].borrow().bbox().height()) as f32;
+            x1 = bboxes[select_idx].borrow().bbox().x();
+            y1 = bboxes[select_idx].borrow().bbox().y();
+            x2 = bboxes[select_idx].borrow().bbox().x() + bboxes[select_idx].borrow().bbox().width() as i32 - 1;
+            y2 = bboxes[select_idx].borrow().bbox().y() + bboxes[select_idx].borrow().bbox().height() as i32 - 1;
+        }
 
         select_idx += 1;
 
         for i in select_idx..bboxes.len() {
-            if mask_merged[i] == 1 {
+            if mask_merged[i] {
                 continue;
             }
 
-            let bbox_i_ref = bboxes[i].borrow();
-            let bbox_i = bbox_i_ref.bbox();
-            let x = cmp::max(x1, bbox_i.x());
-            let y = cmp::max(y1, bbox_i.y());
-            let w = cmp::min(x2, (bbox_i.x() + bbox_i.width() as i32 - 1)) - x + 1;
-            let h = cmp::min(y2, (bbox_i.y() + bbox_i.height() as i32 - 1)) - y + 1;
+            let x = cmp::max(x1, bboxes[i].borrow().bbox().x());
+            let y = cmp::max(y1, bboxes[i].borrow().bbox().y());
+            let w = cmp::min(x2, (bboxes[i].borrow().bbox().x() + bboxes[i].borrow().bbox().width() as i32 - 1)) - x + 1;
+            let h = cmp::min(y2, (bboxes[i].borrow().bbox().y() + bboxes[i].borrow().bbox().height() as i32 - 1)) - y + 1;
 
             if w <= 0 || h <= 0 {
                 continue;
             }
 
-            let area2 = (bbox_i.width() * bbox_i.height()) as f32;
+            let area2 = (bboxes[i].borrow().bbox().width() * bboxes[i].borrow().bbox().height()) as f32;
             let area_intersect = (w * h) as f32;
             let area_union = area1 + area2 - area_intersect;
             if area_intersect / area_union > iou_thresh {
-                mask_merged[i] = 1;
-                let mut bboxes_nms_last = bboxes_nms.last().unwrap().borrow_mut();
-                let score = bboxes_nms_last.score();
-                bboxes_nms_last.set_score(score + bboxes[i].borrow().score());
+                mask_merged[i] = true;
+                let bbox_i_score = bboxes[i].borrow().score();
+                score += bbox_i_score;
+
             }
         }
+
+        bboxes_nms.last().unwrap().borrow_mut().set_score(score);
     }
 }
