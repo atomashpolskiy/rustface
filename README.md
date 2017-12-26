@@ -12,7 +12,7 @@
     <img src="https://atomashpolskiy.github.io/static/img/scientists.png" alt="Bt Example">
 </p>
 
-<p align="center">
+<p align="left">
     <a href="https://opensource.org/licenses/BSD-2-Clause">
         <img src="https://img.shields.io/badge/license-BSD-blue.svg"
              alt="License">
