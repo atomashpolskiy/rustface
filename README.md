@@ -69,7 +69,7 @@ $ cargo run --release model/seeta_fd_frontal_v1.0.bin <path-to-image>
 ## TODO
 
 * Use SSE for certain transformations in `math` module and `SurfMlpFeatureMap`
-* Use OpenMP for parallelization of some CPU intensive loops
+* Parallelize some CPU intensive loops
 * Tests (it would make sense to start with an integration test for `Detector::detect`, based on the results retrieved from the original library)
 
 ## License
