@@ -10,6 +10,7 @@
 
 <p align="center">
     <img src="https://atomashpolskiy.github.io/static/img/scientists.png" alt="Bt Example">
+    <i>Example of demo program output</i>
 </p>
 
 <p align="left">
