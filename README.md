@@ -4,7 +4,7 @@
 
 <p align="center"><strong>
 <sup>
-<br/><a href="https://github.com/seetaface/SeetaFaceEngine/tree/master/FaceDetection">SeetaFace Detection</a> in Rust programming language
+<br/>SeetaFace detection library for the Rust programming language
 </sup>
 </strong></p>
 
