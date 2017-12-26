@@ -14,6 +14,10 @@
 </p>
 
 <p align="left">
+    <a href="https://travis-ci.org/atomashpolskiy/rustface">
+        <img src="https://img.shields.io/travis/atomashpolskiy/rustface/master.svg"
+             alt="Linux build">
+    </a>    
     <a href="https://opensource.org/licenses/BSD-2-Clause">
         <img src="https://img.shields.io/badge/license-BSD-blue.svg"
              alt="License">
@@ -50,7 +54,7 @@ fn main() {
 
 ## How to build
 
-The project is a library crate, but also contains a runnable module for demonstration purposes. In order to build it, you'll need an OpenCV 2.4 installation for [generation of Rust bindings](https://github.com/kali/opencv-rust).
+The project is a library crate, but also contains an optional runnable module for demonstration purposes. In order to build it, you'll need an OpenCV 2.4 installation for [generation of Rust bindings](https://github.com/kali/opencv-rust).
 
 Otherwise, the project relies on the stable Rust toolchain, so just use the standard Cargo `build` command:
 
@@ -58,12 +62,18 @@ Otherwise, the project relies on the stable Rust toolchain, so just use the stan
 cargo build --release
 ```
 
-## Run demo
-
-Code for the demo is located in `main.rs` file. It performs face detection for the given image and opens it in a separate window.
+To build the runnable demo, specify the `opencv-demo` feature in the Cargo command line:
 
 ```
-$ cargo run --release model/seeta_fd_frontal_v1.0.bin <path-to-image>
+cargo build --release --features opencv-demo
+```
+
+## Run demo
+
+Code for the demo is located in `src/bin/opencv-demo/main.rs` file. It performs face detection for the given image and opens it in a separate window.
+
+```
+cargo run --release --features opencv-demo model/seeta_fd_frontal_v1.0.bin <path-to-image>
 ```
 
 ## TODO
