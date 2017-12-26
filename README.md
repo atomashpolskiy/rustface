@@ -12,12 +12,23 @@
     <img src="https://atomashpolskiy.github.io/static/img/scientists.png" alt="Bt Example">
 </p>
 
-## API
+<p align="center">
+    <a href="https://opensource.org/licenses/BSD-2-Clause">
+        <img src="https://img.shields.io/badge/license-BSD-blue.svg"
+             alt="License">
+    </a>
+</p>
+
+## About
+
+SeetaFace Detection is an implementation of Funnel-Structured cascade, which is designed for real-time multi-view face detection. FuSt aims at a good trade-off between accuracy and speed by using a coarse-to-fine structure. It consists of multiple view-specific fast LAB cascade classifiers at early stages, followed by coarse Multilayer Perceptron (MLP) cascades at later stages. The final stage is one unified fine MLP cascade, processing all proposed windows in a centralized style. [Read more...](https://github.com/seetaface/SeetaFaceEngine/tree/master/FaceDetection)
+
+## Usage example
 
 ```rust
 extern crate rustface;
 
-use rustface::{Detector, ImageData};
+use rustface::{Detector, FaceInfo, ImageData};
 
 fn main() {
     let mut detector = rustface::create_detector("/path/to/model").unwrap();
@@ -28,9 +39,9 @@ fn main() {
     
     let mut image = ImageData::new(bytes, width, height);
     for face in detector.detect(&mut image).into_iter() {
-    
-        println!("x: {}, y: {}, w")
-    };
+        // print confidence score and coordinates
+        println!("found face: {:?}", face);
+    }
 }
 ```
 
