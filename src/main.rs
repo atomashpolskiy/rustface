@@ -7,7 +7,7 @@ use opencv::core::{Mat, Rect, rectangle, Scalar};
 use opencv::highgui::{destroy_all_windows, imread, IMREAD_UNCHANGED, imshow, named_window, wait_key, WINDOW_AUTOSIZE};
 use opencv::imgproc::{cvt_color, COLOR_BGR2GRAY};
 
-use rustface::ImageData;
+use rustface::{Detector, FaceInfo, ImageData};
 
 fn main() {
     let options = match Options::parse(std::env::args()) {
@@ -39,15 +39,15 @@ fn main() {
         }
     };
 
+    let faces;
     if mat.channels().unwrap() != 1 {
-        cvt_color(&mat, &mat, COLOR_BGR2GRAY, 0).expect("Failed to convert image to gray scale");
+        let mut mat_gray = Mat::new().unwrap();
+        cvt_color(&mat, &mat_gray, COLOR_BGR2GRAY, 0).expect("Failed to convert image to gray scale");
+        faces = detect_faces(&mut detector, &mut mat_gray);
+    } else {
+        faces = detect_faces(&mut detector, &mut mat);
     }
 
-    let image_size = mat.size().unwrap();
-    let mut image = ImageData::new(mat.ptr0(0).unwrap(), image_size.width as u32, image_size.height as u32);
-
-    let faces = detector.detect(&mut image);
-    println!("Found {} faces", faces.len());
     for face in faces.into_iter() {
         let rect = Rect {
             x: face.bbox().x(),
@@ -62,6 +62,14 @@ fn main() {
     imshow("Test", &mat).unwrap();
     wait_key(0).unwrap();
     destroy_all_windows().unwrap();
+}
+
+fn detect_faces(detector: &mut Box<Detector>, mat: &mut Mat) -> Vec<FaceInfo> {
+    let image_size = mat.size().unwrap();
+    let mut image = ImageData::new(mat.ptr0(0).unwrap(), image_size.width as u32, image_size.height as u32);
+    let faces = detector.detect(&mut image);
+    println!("Found {} faces", faces.len());
+    faces
 }
 
 struct Options {
