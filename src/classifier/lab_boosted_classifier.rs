@@ -46,8 +46,8 @@ impl Classifier for LabBoostedClassifier {
 
         let mut i = 0;
         while positive && i < self.base_classifiers.len() {
-            let (offset_x, offset_y) = self.features[i];
             for _ in 0..K_FEAT_GROUP_SIZE {
+                let (offset_x, offset_y) = self.features[i];
                 let feature_val = (*self.feature_map).borrow().get_feature_val(offset_x, offset_y);
                 score += self.base_classifiers[i].weights[feature_val as usize];
                 i += 1;
