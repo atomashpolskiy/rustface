@@ -21,7 +21,9 @@
 
 ## About
 
-SeetaFace Detection is an implementation of Funnel-Structured cascade, which is designed for real-time multi-view face detection. FuSt aims at a good trade-off between accuracy and speed by using a coarse-to-fine structure. It consists of multiple view-specific fast LAB cascade classifiers at early stages, followed by coarse Multilayer Perceptron (MLP) cascades at later stages. The final stage is one unified fine MLP cascade, processing all proposed windows in a centralized style. [Read more...](https://github.com/seetaface/SeetaFaceEngine/tree/master/FaceDetection)
+SeetaFace Detection is an implementation of Funnel-Structured cascade, which is designed for real-time multi-view face detection. FuSt aims at a good trade-off between accuracy and speed by using a coarse-to-fine structure. It consists of multiple view-specific fast LAB cascade classifiers at early stages, followed by coarse Multilayer Perceptron (MLP) cascades at later stages. The final stage is one unified fine MLP cascade, processing all proposed windows in a centralized style. 
+
+[Read more...](https://github.com/seetaface/SeetaFaceEngine/tree/master/FaceDetection)
 
 ## Usage example
 
