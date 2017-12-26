@@ -142,7 +142,7 @@ impl Layer {
                 x = math::vector_inner_product(
                     input.as_ptr(),
                     self.weights.as_ptr().offset((i * self.input_dim) as isize),
-                    self.input_dim);
+                    self.input_dim) + self.biases[i];
             }
             output[i] = (self.act_func)(x);
         }
