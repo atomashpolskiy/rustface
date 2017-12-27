@@ -71,6 +71,7 @@ unsafe fn square_avx2(src: *const i32, dest: *mut u32, length: usize) {
         z2 = z2.offset(1);
         i += 8;
     }
+
     for k in i..(length as isize) {
         let value = *src.offset(i);
         *dest.offset(i) = i32::pow(value, 2) as u32;
@@ -121,8 +122,8 @@ unsafe fn abs_ssse3(src: *const i32, dest: *mut i32, length: usize) {
     }
 
     for k in i..(length as isize) {
-        let value = *src.offset(i as isize);
-        *dest.offset(i as isize) = if value >= 0 { value } else { -value };
+        let value = *src.offset(k as isize);
+        *dest.offset(k as isize) = if value >= 0 { value } else { -value };
     }
 }
 
@@ -279,20 +280,87 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_vector_add() {
+    fn test_square_portable() {
         let mut vec = vec![1, 2, 3];
-        unsafe {
-            vector_add(vec.as_ptr(), vec.as_ptr(), vec.as_mut_ptr(), vec.len());
-        }
-        assert_eq!(vec![2, 4, 6], vec)
+        square_portable(vec.as_ptr(), vec.as_mut_ptr() as *mut u32, vec.len());
+        assert_eq!(vec![1, 4, 9], vec);
     }
 
     #[test]
-    fn test_vector_sub() {
-        let mut vec = vec![1, 2, 3];
+    #[cfg(all(any(target_arch = "x86_64", target_arch = "x86"), target_feature = "avx2"))]
+    fn test_square_avx2() {
+        let mut vec = vec![1, 2, 3, 4, -1, -2, -3, -4, 5, -6];
         unsafe {
-            vector_sub(vec.as_ptr(), vec.as_ptr(), vec.as_mut_ptr(), vec.len());
+            square_avx2(vec.as_ptr(), vec.as_mut_ptr() as *mut u32, vec.len());
         }
-        assert_eq!(vec![0, 0, 0], vec)
+        assert_eq!(vec![1, 4, 9, 16, 1, 4, 9, 16, 25, 36], vec);
+    }
+
+    #[test]
+    fn test_abs_portable() {
+        let mut vec = vec![-1, 2, -3];
+        abs_portable(vec.as_ptr(), vec.as_mut_ptr(), vec.len());
+        assert_eq!(vec![1, 2, 3], vec);
+    }
+
+    #[test]
+    #[cfg(all(any(target_arch = "x86_64", target_arch = "x86"), target_feature = "ssse3"))]
+    fn test_abs_ssse3() {
+        let mut vec = vec![-1, 2, -3, 4, -5, 6];
+        unsafe {
+            abs_ssse3(vec.as_ptr(), vec.as_mut_ptr(), vec.len());
+        }
+        assert_eq!(vec![1, 2, 3, 4, 5, 6], vec);
+    }
+
+    #[test]
+    fn test_vector_add_portable() {
+        let mut vec = vec![1, 2, 3];
+        vector_add_portable(vec.as_ptr(), vec.as_ptr(), vec.as_mut_ptr(), vec.len());
+        assert_eq!(vec![2, 4, 6], vec);
+    }
+
+    #[test]
+    #[cfg(all(any(target_arch = "x86_64", target_arch = "x86"), target_feature = "sse2"))]
+    fn test_vector_add_sse2() {
+        let mut vec = vec![1, 2, 3, 4, -1, -2, -3, -4, -5, 6];
+        unsafe {
+            vector_add_sse2(vec.as_ptr(), vec.as_ptr(), vec.as_mut_ptr(), vec.len());
+        }
+        assert_eq!(vec![2, 4, 6, 8, -2, -4, -6, -8, -10, 12], vec);
+    }
+
+    #[test]
+    fn test_vector_sub_portable() {
+        let mut vec = vec![1, 2, 3];
+        vector_sub_portable(vec.as_ptr(), vec.as_ptr(), vec.as_mut_ptr(), vec.len());
+        assert_eq!(vec![0, 0, 0], vec);
+    }
+
+    #[test]
+    #[cfg(all(any(target_arch = "x86_64", target_arch = "x86"), target_feature = "sse2"))]
+    fn test_vector_sub_sse2() {
+        let mut vec = vec![1, 2, 3, 4, -1, -2, -3, -4, -5, 6];
+        unsafe {
+            vector_sub_sse2(vec.as_ptr(), vec.as_ptr(), vec.as_mut_ptr(), vec.len());
+        }
+        assert_eq!(vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0], vec);
+    }
+
+    #[test]
+    fn test_vector_inner_product_portable() {
+        let mut vec = vec![1.0, 2.0, 3.0];
+        let result = vector_inner_product_portable(vec.as_ptr(), vec.as_ptr(), vec.len());
+        assert_eq!(14.0, result);
+    }
+
+    #[test]
+    #[cfg(all(any(target_arch = "x86_64", target_arch = "x86"), target_feature = "sse"))]
+    fn test_vector_inner_product_sse() {
+        let mut vec = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0];
+        let result = unsafe {
+            vector_inner_product_sse(vec.as_ptr(), vec.as_ptr(), vec.len())
+        };
+        assert_eq!(91.0, result);
     }
 }
