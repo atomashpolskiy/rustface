@@ -63,7 +63,7 @@ unsafe fn square_avx2(src: *const i32, dest: *mut u32, length: usize) {
 
     // _mm_mullo_epi32 is not supported in Rust yet, see https://github.com/rust-lang-nursery/stdsimd/issues/40
     // might use _mm_mullo_epi16 (SSE2) for better portability instead, because inputs are unlikely to exceed int16
-    while i < (length - 8) as isize {
+    while i < (length as isize - 8) {
         x1 = _mm256_loadu_si256(x2);
         _mm256_storeu_si256(z2, __m256i::from(_mm256_mullo_epi32(i32x8::from(x1), i32x8::from(x1))));
 
@@ -110,7 +110,7 @@ unsafe fn abs_ssse3(src: *const i32, dest: *mut i32, length: usize) {
     let mut x = src as *const __m128i;
     let mut z = dest as *mut __m128i;
 
-    while i < (length - 4) as isize {
+    while i < (length as isize - 4) {
         val = _mm_loadu_si128(x);
         val_abs = __m128i::from(_mm_abs_epi32(i32x4::from(val)));
         _mm_storeu_si128(z, val_abs);
@@ -159,7 +159,7 @@ unsafe fn vector_add_sse2(left: *const i32, right: *const i32, dest: *mut i32, l
     let mut y2 = right as *const __m128i;
     let mut z2 = dest as *mut __m128i;
 
-    while i < (length - 4) as isize {
+    while i < (length as isize - 4) {
         x1 = _mm_loadu_si128(x2);
         y1 = _mm_loadu_si128(y2);
         _mm_storeu_si128(z2, __m128i::from(_mm_add_epi32(i32x4::from(x1), i32x4::from(y1))));
@@ -208,7 +208,7 @@ unsafe fn vector_sub_sse2(left: *const i32, right: *const i32, dest: *mut i32, l
     let mut y2 = right as *const __m128i;
     let mut z2 = dest as *mut __m128i;
 
-    while i < (length - 4) as isize {
+    while i < (length as isize - 4) {
         x1 = _mm_loadu_si128(x2);
         y1 = _mm_loadu_si128(y2);
         _mm_storeu_si128(z2, __m128i::from(_mm_sub_epi32(i32x4::from(x1), i32x4::from(y1))));
@@ -258,7 +258,7 @@ unsafe fn vector_inner_product_sse(left: *const f32, right: *const f32, length: 
     let mut z1 = _mm_setzero_ps();
     let mut buf = vec![0.0; 4];
 
-    while i < (length - 4) as isize {
+    while i < (length as isize - 4) {
         x1 = _mm_loadu_ps(left.offset(i));
         y1 = _mm_loadu_ps(right.offset(i));
         z1 = _mm_add_ps(z1, _mm_mul_ps(x1, y1));
