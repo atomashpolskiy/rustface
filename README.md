@@ -56,7 +56,13 @@ fn main() {
 
 The project is a library crate, but also contains an optional runnable module for demonstration purposes. In order to build it, you'll need an OpenCV 2.4 installation for [generation of Rust bindings](https://github.com/kali/opencv-rust).
 
-Otherwise, the project relies on the stable Rust toolchain, so just use the standard Cargo `build` command:
+Also, due to usage of [experimental stdsimd crate](https://github.com/rust-lang-nursery/stdsimd) for SIMD support, the project relies on the nightly Rust toolchain, so you'll need to install it and set it as the default:
+
+```
+rustup default nightly
+```
+
+Then just use the standard Cargo `build` command:
 
 ```
 cargo build --release
