@@ -78,7 +78,6 @@ cargo run --release --features opencv-demo model/seeta_fd_frontal_v1.0.bin <path
 
 ## TODO
 
-* Use SSE for certain transformations in `math` module and `SurfMlpFeatureMap`
 * Parallelize some CPU intensive loops
 * Tests (it would make sense to start with an integration test for `Detector::detect`, based on the results retrieved from the original library)
 
