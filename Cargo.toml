@@ -6,14 +6,11 @@ authors = ["Andrei Tomashpolskiy <nordmann89@gmail.com>"]
 [dependencies]
 num = "0.1.41"
 byteorder = "1.2.1"
-opencv = { version = "0.2.3", optional = true }
-#faster = { version = "0.3.0", optional = true }
-#faster = "0.3.0"
 stdsimd = "0.0.3"
+opencv = { version = "0.2.3", optional = true }
 
 [features]
 opencv-demo = ["opencv"]
-#sse = ["faster"]
 
 [[bin]]
 required-features = ["opencv-demo"]
