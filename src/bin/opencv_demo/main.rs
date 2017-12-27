@@ -20,6 +20,7 @@ extern crate rustface;
 extern crate opencv;
 
 use std::env::Args;
+use std::time::{Duration, Instant};
 
 use opencv::core::{Mat, Rect, rectangle, Scalar};
 use opencv::highgui::{destroy_all_windows, imread, IMREAD_UNCHANGED, imshow, named_window, wait_key, WINDOW_AUTOSIZE};
@@ -85,9 +86,14 @@ fn main() {
 fn detect_faces(detector: &mut Box<Detector>, mat: &mut Mat) -> Vec<FaceInfo> {
     let image_size = mat.size().unwrap();
     let mut image = ImageData::new(mat.ptr0(0).unwrap(), image_size.width as u32, image_size.height as u32);
+    let now = Instant::now();
     let faces = detector.detect(&mut image);
-    println!("Found {} faces", faces.len());
+    println!("Found {} faces in {} ms", faces.len(), get_millis(now.elapsed()));
     faces
+}
+
+fn get_millis(duration: Duration) -> u64 {
+    duration.as_secs() * 1000u64 + (duration.subsec_nanos() / 1_000_000) as u64
 }
 
 struct Options {
