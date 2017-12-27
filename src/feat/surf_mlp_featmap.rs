@@ -22,6 +22,10 @@ use math;
 
 use std::ptr;
 
+use stdsimd::simd::{i32x4};
+use stdsimd::vendor::{__m128i, _mm_set1_epi32, _mm_set_epi32, _mm_xor_si128, _mm_cmplt_epi32, _mm_and_si128,
+                      _mm_add_epi32, _mm_loadu_si128, _mm_storeu_si128};
+
 pub struct SurfMlpFeatureMap {
     roi: Option<Rectangle>,
     width: u32,
@@ -189,36 +193,68 @@ impl SurfMlpFeatureMap {
         let mut grad_x_ptr = self.grad_x.as_ptr();
         let mut grad_y_ptr = self.grad_y.as_ptr();
 
-        let mut dx: i32;
-        let mut dy: i32;
-        let mut dx_mask: i32;
-        let mut dy_mask: i32;
-        let mut cmp: u32;
-        let xor_bits: Vec<u32> = vec![0xffffffff, 0xffffffff, 0, 0];
-
-        let mut src = self.int_img.as_mut_ptr();
         unsafe {
-            for _ in 0..self.length {
-                dx = *grad_x_ptr;
+            let mut dx: __m128i;
+            let mut dy: __m128i;
+            let mut dx_mask: __m128i;
+            let mut dy_mask: __m128i;
+            let zero = __m128i::from(_mm_set1_epi32(0));
+            let xor_bits = __m128i::from(_mm_set_epi32(0, 0, -1, -1));
+            let mut data: __m128i;
+            let mut result: __m128i;
+            let mut src = self.int_img.as_mut_ptr() as *mut __m128i;
+
+            for i in 0..self.length {
+                dx = __m128i::from(_mm_set1_epi32(*grad_x_ptr));
+                dy = __m128i::from(_mm_set1_epi32(*grad_y_ptr));
+                dx_mask = _mm_xor_si128(__m128i::from(_mm_cmplt_epi32(i32x4::from(dx), i32x4::from(zero))), xor_bits);
+                dy_mask = _mm_xor_si128(__m128i::from(_mm_cmplt_epi32(i32x4::from(dy), i32x4::from(zero))), xor_bits);
+
+                data = _mm_loadu_si128(src);
+                result = _mm_and_si128(data, dy_mask);
+                _mm_storeu_si128(src, result);
+                src = src.offset(1);
+
+                data = _mm_loadu_si128(src);
+                result = _mm_and_si128(data, dx_mask);
+                _mm_storeu_si128(src, result);
+                src = src.offset(1);
+
                 grad_x_ptr = grad_x_ptr.offset(1);
-                dy = *grad_y_ptr;
                 grad_y_ptr = grad_y_ptr.offset(1);
-
-                cmp = if dy < 0 { 0xffffffff } else { 0x0 };
-                for j in 0..4 {
-                    dy_mask = (cmp ^ xor_bits[j]) as i32;
-                    *src = *src & dy_mask;
-                    src = src.offset(1);
-                }
-
-                cmp = if dx < 0 { 0xffffffff } else { 0x0 };
-                for j in 0..4 {
-                    dx_mask = (cmp ^ xor_bits[j]) as i32;
-                    *src = *src & dx_mask;
-                    src = src.offset(1);
-                }
             }
         }
+
+//        let mut dx: i32;
+//        let mut dy: i32;
+//        let mut dx_mask: i32;
+//        let mut dy_mask: i32;
+//        let mut cmp: u32;
+//        let xor_bits: Vec<u32> = vec![0xffffffff, 0xffffffff, 0, 0];
+//
+//        let mut src = self.int_img.as_mut_ptr();
+//        unsafe {
+//            for _ in 0..self.length {
+//                dx = *grad_x_ptr;
+//                grad_x_ptr = grad_x_ptr.offset(1);
+//                dy = *grad_y_ptr;
+//                grad_y_ptr = grad_y_ptr.offset(1);
+//
+//                cmp = if dy < 0 { 0xffffffff } else { 0x0 };
+//                for j in 0..4 {
+//                    dy_mask = (cmp ^ xor_bits[j]) as i32;
+//                    *src = *src & dy_mask;
+//                    src = src.offset(1);
+//                }
+//
+//                cmp = if dx < 0 { 0xffffffff } else { 0x0 };
+//                for j in 0..4 {
+//                    dx_mask = (cmp ^ xor_bits[j]) as i32;
+//                    *src = *src & dx_mask;
+//                    src = src.offset(1);
+//                }
+//            }
+//        }
     }
 
     fn integral(&mut self) {
@@ -240,13 +276,43 @@ impl SurfMlpFeatureMap {
     }
 
     unsafe fn vector_cumulative_add(x: *const i32, len: usize, num_channel: u32) {
-        let num_channel = num_channel as usize;
-        let cols = len / num_channel - 1;
-        for i in 0..cols as isize {
-            let col1 = x.offset(i * num_channel as isize);
-            let col2 = col1.offset(num_channel as isize);
-            math::vector_add(col1, col2, col2 as *mut i32, num_channel);
+        {
+            let mut x1: __m128i;
+            let mut y1: __m128i;
+            let mut z1: __m128i;
+            let mut x2 = x as *const __m128i;
+            let mut y2 = x.offset(num_channel as isize) as *const __m128i;
+            let mut z2 = y2;
+
+            let len = len / num_channel as usize - 1;
+            for i in 0..len {
+                // first 4 channels
+                x1 = _mm_loadu_si128(x2);
+                x2 = x2.offset(1);
+                y1 = _mm_loadu_si128(y2);
+                y2 = y2.offset(1);
+                z1 = __m128i::from(_mm_add_epi32(i32x4::from(x1), i32x4::from(y1)));
+                _mm_storeu_si128(z2 as *mut __m128i, z1);
+                z2 = y2;
+
+                // second 4 channels
+                x1 = _mm_loadu_si128(x2);
+                x2 = x2.offset(1);
+                y1 = _mm_loadu_si128(y2);
+                y2 = y2.offset(1);
+                z1 = __m128i::from(_mm_add_epi32(i32x4::from(x1), i32x4::from(y1)));
+                _mm_storeu_si128(z2 as *mut __m128i, z1);
+                z2 = y2;
+            }
         }
+
+//        let num_channel = num_channel as usize;
+//        let cols = len / num_channel - 1;
+//        for i in 0..cols as isize {
+//            let col1 = x.offset(i * num_channel as isize);
+//            let col2 = col1.offset(num_channel as isize);
+//            math::vector_add(col1, col2, col2 as *mut i32, num_channel);
+//        }
     }
 
     unsafe fn compute_feature_vector(&self, feature: &Feature, feature_vec: *mut i32) {
