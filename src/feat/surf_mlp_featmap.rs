@@ -194,7 +194,7 @@ impl SurfMlpFeatureMap {
             {
                 unsafe {
                     self.mask_integral_channel_sse2()
-                };
+                }
             }
         #[cfg(not(all(any(target_arch = "x86_64", target_arch = "x86"), target_feature = "sse2")))]
             {
@@ -298,7 +298,7 @@ impl SurfMlpFeatureMap {
             {
                 unsafe {
                     SurfMlpFeatureMap::vector_cumulative_add_sse2(x, len, num_channel)
-                };
+                }
             }
         #[cfg(not(all(any(target_arch = "x86_64", target_arch = "x86"), target_feature = "sse2")))]
             {
