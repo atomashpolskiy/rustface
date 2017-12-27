@@ -16,6 +16,12 @@
 // You should have received a copy of the BSD 2-Clause License along with the software.
 // If not, see < https://opensource.org/licenses/BSD-2-Clause>.
 
+use stdsimd::simd::{i32x4, i32x8, f32x4};
+use stdsimd::vendor::{__m128i, __m256i,
+                      _mm_setzero_ps, _mm_loadu_ps, _mm_storeu_ps, _mm_add_ps, _mm_mul_ps,
+                      _mm_add_epi32, _mm_sub_epi32, _mm_abs_epi32, _mm256_mullo_epi32,
+                      _mm_loadu_si128, _mm256_loadu_si256, _mm_storeu_si128, _mm256_storeu_si256};
+
 pub unsafe fn copy_u8_to_i32(src: *const u8, dest: *mut i32, length: usize) {
     for i in 0..length as isize {
         *dest.offset(i) = *src.offset(i) as i32;
@@ -23,49 +29,125 @@ pub unsafe fn copy_u8_to_i32(src: *const u8, dest: *mut i32, length: usize) {
 }
 
 pub unsafe fn square(src: *const i32, dest: *mut u32, length: usize) {
-    for i in 0..length as isize {
+    let mut i: isize = 0;
+
+    let mut x1: __m256i;
+    let mut x2 = src as *const __m256i;
+    let mut z2 = dest as *mut __m256i;
+
+    // _mm_mullo_epi32 is not supported in Rust yet, see https://github.com/rust-lang-nursery/stdsimd/issues/40
+    // might use _mm_mullo_epi16 (SSE2) for better portability instead, because inputs are unlikely to exceed int16
+    while i < (length - 8) as isize {
+        x1 = _mm256_loadu_si256(x2);
+        _mm256_storeu_si256(z2, __m256i::from(_mm256_mullo_epi32(i32x8::from(x1), i32x8::from(x1))));
+
+        x2 = x2.offset(1);
+        z2 = z2.offset(1);
+        i += 8;
+    }
+    for k in i..(length as isize) {
         let value = *src.offset(i);
         *dest.offset(i) = i32::pow(value, 2) as u32;
     }
 }
 
 pub unsafe fn abs(src: *const i32, dest: *mut i32, length: usize) {
-    for i in 0..length as isize {
-        let value = *src.offset(i);
-        *dest.offset(i) = if value >= 0 { value } else { -value };
+    let mut i: isize = 0;
+
+    let mut val: __m128i;
+    let mut val_abs: __m128i;
+
+    let mut x = src as *const __m128i;
+    let mut z = dest as *mut __m128i;
+
+    while i < (length - 4) as isize {
+        val = _mm_loadu_si128(x);
+        val_abs = __m128i::from(_mm_abs_epi32(i32x4::from(val)));
+        _mm_storeu_si128(z, val_abs);
+
+        x = x.offset(1);
+        z = z.offset(1);
+        i += 4;
+    }
+
+    for k in i..(length as isize) {
+        let value = *src.offset(i as isize);
+        *dest.offset(i as isize) = if value >= 0 { value } else { -value };
     }
 }
 
 pub unsafe fn vector_add(left: *const i32, right: *const i32, dest: *mut i32, length: usize) {
-    apply_for_range(
-        &mut |x, y, z| *z = *x + *y,
-        left, right, dest, length
-    );
-}
+    let mut i: isize = 0;
 
-pub unsafe fn vector_sub(left: *const i32, right: *const i32, dest: *mut i32, length: usize) {
-    apply_for_range(
-        &mut |x, y, z| *z = *x - *y,
-        left, right, dest, length
-    );
-}
+    let mut x1: __m128i;
+    let mut y1: __m128i;
 
-unsafe fn apply_for_range<F>(op: &mut F, left: *const i32, right: *const i32, dest: *mut i32, length: usize)
-    where F: FnMut(*const i32, *const i32, *mut i32) {
-    for i in 0..length as isize {
-        apply(op, left.offset(i), right.offset(i), dest.offset(i));
+    let mut x2 = left as *const __m128i;
+    let mut y2 = right as *const __m128i;
+    let mut z2 = dest as *mut __m128i;
+
+    while i < (length - 4) as isize {
+        x1 = _mm_loadu_si128(x2);
+        y1 = _mm_loadu_si128(y2);
+        _mm_storeu_si128(z2, __m128i::from(_mm_add_epi32(i32x4::from(x1), i32x4::from(y1))));
+
+        x2 = x2.offset(1);
+        y2 = y2.offset(1);
+        z2 = z2.offset(1);
+        i += 4;
+    }
+
+    for k in i..(length as isize) {
+        *dest.offset(k) = *left.offset(k) + *right.offset(k);
     }
 }
 
-unsafe fn apply<F>(op: &mut F, left: *const i32, right: *const i32, dest: *mut i32)
-    where F: FnMut(*const i32, *const i32, *mut i32) {
-    op(left, right, dest);
+pub unsafe fn vector_sub(left: *const i32, right: *const i32, dest: *mut i32, length: usize) {
+    let mut i: isize = 0;
+
+    let mut x1: __m128i;
+    let mut y1: __m128i;
+
+    let mut x2 = left as *const __m128i;
+    let mut y2 = right as *const __m128i;
+    let mut z2 = dest as *mut __m128i;
+
+    while i < (length - 4) as isize {
+        x1 = _mm_loadu_si128(x2);
+        y1 = _mm_loadu_si128(y2);
+        _mm_storeu_si128(z2, __m128i::from(_mm_sub_epi32(i32x4::from(x1), i32x4::from(y1))));
+
+        x2 = x2.offset(1);
+        y2 = y2.offset(1);
+        z2 = z2.offset(1);
+        i += 4;
+    }
+
+    for k in i..(length as isize) {
+        *dest.offset(k) = *left.offset(k) - *right.offset(k);
+    }
 }
 
 pub unsafe fn vector_inner_product(left: *const f32, right: *const f32, length: usize) -> f32 {
-    let mut product = 0f32;
-    for i in 0..length as isize {
-        product += (*left.offset(i)) * (*right.offset(i));
+    let mut product = 0.0;
+    let mut i: isize = 0;
+
+    let mut x1: f32x4;
+    let mut y1: f32x4;
+    let mut z1 = _mm_setzero_ps();
+    let mut buf = vec![0.0; 4];
+
+    while i < (length - 4) as isize {
+        x1 = _mm_loadu_ps(left.offset(i));
+        y1 = _mm_loadu_ps(right.offset(i));
+        z1 = _mm_add_ps(z1, _mm_mul_ps(x1, y1));
+        i += 4;
+    }
+    _mm_storeu_ps(buf.as_mut_ptr(), z1);
+    product = buf[0] + buf[1] + buf[2] + buf[3];
+
+    for k in i..(length as isize) {
+        product += (*left.offset(k)) * (*right.offset(k));
     }
     product
 }
