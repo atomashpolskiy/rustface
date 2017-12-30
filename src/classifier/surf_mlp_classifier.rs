@@ -26,6 +26,8 @@ use feat::{FeatureMap, SurfMlpFeatureMap};
 use std::ptr;
 use std::cell::RefCell;
 
+use rayon::prelude::*;
+
 struct TwoWayBuffer {
     input: Vec<f32>,
     output: Vec<f32>,
@@ -141,7 +143,7 @@ impl SurfMlpClassifier {
     }
 }
 
-type ActFunc = Fn(f32) -> f32;
+type ActFunc = Fn(f32) -> f32 + Sync;
 
 struct Layer {
     input_dim: usize,
@@ -153,7 +155,7 @@ struct Layer {
 
 impl Layer {
     fn compute(&self, input: &Vec<f32>, output: &mut Vec<f32>) {
-        self.weights.chunks(self.input_dim)
+        self.weights.par_chunks(self.input_dim)
             .zip(&self.biases)
             .zip(output).for_each(|((weights, bias), output)| {
                 let x;

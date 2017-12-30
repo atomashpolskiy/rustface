@@ -7,6 +7,7 @@ authors = ["Andrei Tomashpolskiy <nordmann89@gmail.com>"]
 num = "0.1.41"
 byteorder = "1.2.1"
 stdsimd = "0.0.3"
+rayon = "0.9.0"
 opencv = { version = "0.2.3", optional = true }
 
 [features]
