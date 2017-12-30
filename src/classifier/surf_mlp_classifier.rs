@@ -153,17 +153,15 @@ struct Layer {
 
 impl Layer {
     fn compute(&self, input: &Vec<f32>, output: &mut Vec<f32>) {
-        let output_dim = self.biases.len();
-        for i in 0..output_dim as usize {
-            let x;
-            unsafe {
-                x = math::vector_inner_product(
-                    input.as_ptr(),
-                    self.weights.as_ptr().offset((i * self.input_dim) as isize),
-                    self.input_dim) + self.biases[i];
-            }
-            output[i] = (self.act_func)(x);
-        }
+        self.weights.chunks(self.input_dim)
+            .zip(&self.biases)
+            .zip(output).for_each(|((weights, bias), output)| {
+                let x;
+                unsafe {
+                    x = math::vector_inner_product(input.as_ptr(), weights.as_ptr(), self.input_dim) + bias;
+                }
+                *output = (self.act_func)(x);
+            });
     }
 
     fn input_size(&self) -> usize {
