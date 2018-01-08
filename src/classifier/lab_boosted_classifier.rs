@@ -54,25 +54,23 @@ impl LabBoostedClassifier {
     }
 }
 
+const K_FEAT_GROUP_SIZE: usize = 10;
+const K_STDDEV_THRESH: f64 = 10.0;
+
 impl Classifier for LabBoostedClassifier {
     fn classify(&mut self, _: Option<&mut Vec<f32>>) -> Score {
-        const K_FEAT_GROUP_SIZE: usize = 10;
-        const K_STDDEV_THRESH: f64 = 10.0;
-
         let mut positive = true;
-        let mut score: f32 = 0.0;
+        let mut score = 0.0;
 
         let mut i = 0;
         while positive && i < self.base_classifiers.len() {
             for _ in 0..K_FEAT_GROUP_SIZE {
                 let (offset_x, offset_y) = self.features[i];
-                let feature_val = (*self.feature_map).borrow().get_feature_val(offset_x, offset_y);
+                let feature_val = self.feature_map.borrow().get_feature_val(offset_x, offset_y);
                 score += self.base_classifiers[i].weights[feature_val as usize];
                 i += 1;
             }
-            if score < self.base_classifiers[i - 1].thresh {
-                positive = false;
-            }
+            positive = score >= self.base_classifiers[i - 1].thresh;
         }
         positive = positive && ((*self.feature_map).borrow().get_std_dev() > K_STDDEV_THRESH);
 
@@ -80,10 +78,10 @@ impl Classifier for LabBoostedClassifier {
     }
 
     fn compute(&mut self, image: &ImageData) {
-        (*self.feature_map).borrow_mut().compute(image.data(), image.width(), image.height());
+        self.feature_map.borrow_mut().compute(image.data(), image.width(), image.height());
     }
 
     fn set_roi(&mut self, roi: Rectangle) {
-        (*self.feature_map).borrow_mut().set_roi(roi);
+        self.feature_map.borrow_mut().set_roi(roi);
     }
 }
