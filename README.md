@@ -30,6 +30,31 @@ SeetaFace Detection is an implementation of Funnel-Structured cascade, which is 
 
 [Read more...](https://github.com/seetaface/SeetaFaceEngine/tree/master/FaceDetection#seetaface-detection)
 
+## Performance
+
+Crude manual benchmarking shows that the Rust version is _slightly faster_ than the original C++ version. Here are some numbers for a [medium-sized image with 29 persons](https://github.com/atomashpolskiy/rustface/tree/master/assets/test/scientists.jpg), which you may see above in this readme:
+
+```
+Image size: 1666x1136
+Number of faces: 29
+
+CPU: 2,3 GHz Intel Core i7
+Single-thread (OpenMP disabled, Rayon threads set to 1)
+SIMD enabled
+
+* Original *
+samples (ms): 893,893,891,883,884,883,890,908,893,879
+mean (ms): 889.7
+stddev (ms): 7.785
+
+* Rustface *
+samples (ms): 867,861,851,850,856,847,855,851,850,861
+mean (ms): 854.9
+stddev (ms): 6.024
+```
+
+In this particular test the Rust version has been **4% faster on average** than its C++ counterpart.
+
 ## Usage example
 
 ```rust
