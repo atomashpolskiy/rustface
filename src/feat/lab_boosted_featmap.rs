@@ -75,9 +75,7 @@ impl LabBoostedFeatureMap {
     pub fn get_feature_val(&self, offset_x: i32, offset_y: i32) -> u8 {
         let roi = self.roi.as_ref().unwrap();
         let i = (roi.y() + offset_y) * (self.width as i32) + roi.x() + offset_x;
-        self.feat_map.get(i as usize)
-            .expect(&format!("requested element #{}, but length is {}", i, self.feat_map.len())[..])
-            .clone()
+        self.feat_map[i as usize]
     }
 
     pub fn get_std_dev(&self) -> f64 {
