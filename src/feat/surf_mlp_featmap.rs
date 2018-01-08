@@ -26,6 +26,8 @@ use stdsimd::simd::{i32x4};
 use stdsimd::vendor::{__m128i, _mm_set1_epi32, _mm_set_epi32, _mm_xor_si128, _mm_cmplt_epi32, _mm_and_si128,
                       _mm_add_epi32, _mm_loadu_si128, _mm_storeu_si128};
 
+use rayon::prelude::*;
+
 pub struct SurfMlpFeatureMap {
     roi: Option<Rectangle>,
     width: u32,
@@ -148,11 +150,13 @@ impl SurfMlpFeatureMap {
             math::vector_sub(input.offset(self.width as isize), input, dy, len);
             math::vector_add(dy, dy, dy, len);
 
-            for r in 1..(self.height - 1) {
-                let src = input.offset(((r - 1) * self.width) as isize);
-                let dest = dy.offset((r * self.width) as isize);
-                math::vector_sub(src.offset((self.width << 1) as isize), src, dest, len);
-            }
+            let step = self.width as usize;
+            self.img_buf.par_chunks(step)
+                .zip(self.grad_y[step..].par_chunks_mut(step)).for_each(|(inputs, outputs)| {
+                    let src = inputs.as_ptr();
+                    let dest = outputs.as_mut_ptr();
+                    math::vector_sub(src.offset((step << 1) as isize), src, dest, len);
+                });
 
             let offset = ((self.height - 1) * self.width) as isize;
             dy = dy.offset(offset);
