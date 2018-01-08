@@ -17,3 +17,6 @@ opencv-demo = ["opencv", "cpuprofiler"]
 [[bin]]
 required-features = ["opencv-demo"]
 name = "opencv_demo"
+
+[profile.release]
+lto = true
