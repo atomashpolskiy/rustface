@@ -9,9 +9,10 @@ byteorder = "1.2.1"
 stdsimd = "0.0.3"
 rayon = "0.9.0"
 opencv = { version = "0.2.3", optional = true }
+cpuprofiler = { version = "0.0.3", optional = true }
 
 [features]
-opencv-demo = ["opencv"]
+opencv-demo = ["opencv", "cpuprofiler"]
 
 [[bin]]
 required-features = ["opencv-demo"]

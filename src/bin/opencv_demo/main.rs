@@ -18,6 +18,7 @@
 
 extern crate rustface;
 extern crate opencv;
+extern crate cpuprofiler;
 
 use std::env::Args;
 use std::time::{Duration, Instant};
@@ -25,6 +26,8 @@ use std::time::{Duration, Instant};
 use opencv::core::{Mat, Rect, rectangle, Scalar};
 use opencv::highgui::{destroy_all_windows, imread, IMREAD_UNCHANGED, imshow, named_window, wait_key, WINDOW_AUTOSIZE};
 use opencv::imgproc::{cvt_color, COLOR_BGR2GRAY};
+
+use cpuprofiler::PROFILER;
 
 use rustface::{Detector, FaceInfo, ImageData};
 
@@ -87,7 +90,10 @@ fn detect_faces(detector: &mut Box<Detector>, mat: &mut Mat) -> Vec<FaceInfo> {
     let image_size = mat.size().unwrap();
     let mut image = ImageData::new(mat.ptr0(0).unwrap(), image_size.width as u32, image_size.height as u32);
     let now = Instant::now();
+    // uncomment to profile
+    // PROFILER.lock().unwrap().start("./opencv_demo.profile").unwrap();
     let faces = detector.detect(&mut image);
+    // PROFILER.lock().unwrap().stop().unwrap();
     println!("Found {} faces in {} ms", faces.len(), get_millis(now.elapsed()));
     faces
 }
