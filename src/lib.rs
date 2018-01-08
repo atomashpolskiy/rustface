@@ -34,8 +34,6 @@ pub use common::FaceInfo;
 
 use std::{cmp, io, ptr};
 use std::cmp::Ordering::*;
-use std::cell::RefCell;
-use std::rc::Rc;
 use common::{ImagePyramid, Rectangle, Seq};
 use model::Model;
 
@@ -69,7 +67,7 @@ impl Detector for FuStDetector {
 
         let mut image_pyramid = ImagePyramid::new();
         image_pyramid.set_image_1x(image.data(), image.width(), image.height());
-        // TODO: uncomment
+        // TODO: uncomment (expect perf hit)
 //        image_pyramid.set_max_scale(K_WND_SIZE / self.min_face_size as f32);
         image_pyramid.set_min_scale(K_WND_SIZE / min_img_size as f32);
         image_pyramid.set_scale_step(self.image_pyramid_scale_factor);

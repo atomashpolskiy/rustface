@@ -33,11 +33,9 @@ pub struct SurfMlpFeatureMap {
     width: u32,
     height: u32,
     length: usize,
-    buf_valid_reset: bool,
     feature_pool: FeaturePool,
     feature_vectors: Vec<Vec<i32>>,
     feature_vectors_normalized: Vec<Vec<f32>>,
-    feature_valid_indicators: Vec<bool>,
     grad_x: Vec<i32>,
     grad_y: Vec<i32>,
     int_img: Vec<i32>,
@@ -71,18 +69,15 @@ impl SurfMlpFeatureMap {
             feature_vectors.push(vec![0; dim]);
             feature_vectors_normalized.push(vec![0.0; dim]);
         }
-        let feature_valid_indicators = vec![false; feature_pool_size];
 
         SurfMlpFeatureMap {
             roi: None,
             width: 0,
             height: 0,
             length: 0,
-            buf_valid_reset: false,
             feature_pool,
             feature_vectors,
             feature_vectors_normalized,
-            feature_valid_indicators,
             grad_x: vec![],
             grad_y: vec![],
             int_img: vec![],
@@ -113,9 +108,7 @@ impl SurfMlpFeatureMap {
     }
 
     fn compute_gradient_images(&mut self, input: *const u8) {
-        unsafe {
-            math::copy_u8_to_i32(input, self.img_buf.as_mut_ptr(), self.length);
-        }
+        math::copy_u8_to_i32(input, self.img_buf.as_mut_ptr(), self.length);
         self.compute_grad_x();
         self.compute_grad_y();
     }
@@ -206,6 +199,7 @@ impl SurfMlpFeatureMap {
             }
     }
 
+    #[allow(unused)]
     fn mask_integral_channel_portable(&mut self) {
         let mut grad_x_ptr = self.grad_x.as_ptr();
         let mut grad_y_ptr = self.grad_y.as_ptr();
@@ -244,6 +238,7 @@ impl SurfMlpFeatureMap {
 
     #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
     #[target_feature = "+sse2"]
+    #[allow(unused)]
     unsafe fn mask_integral_channel_sse2(&mut self) {
         let mut grad_x_ptr = self.grad_x.as_ptr();
         let mut grad_y_ptr = self.grad_y.as_ptr();
@@ -258,7 +253,7 @@ impl SurfMlpFeatureMap {
         let mut result: __m128i;
         let mut src = self.int_img.as_mut_ptr() as *mut __m128i;
 
-        for i in 0..self.length {
+        for _ in 0..self.length {
             dx = __m128i::from(_mm_set1_epi32(*grad_x_ptr));
             dy = __m128i::from(_mm_set1_epi32(*grad_y_ptr));
             dx_mask = _mm_xor_si128(__m128i::from(_mm_cmplt_epi32(i32x4::from(dx), i32x4::from(zero))), xor_bits);
@@ -310,6 +305,7 @@ impl SurfMlpFeatureMap {
             }
     }
 
+    #[allow(unused)]
     fn vector_cumulative_add_portable(x: *const i32, len: usize, num_channel: u32) {
         unsafe {
             let num_channel = num_channel as usize;
@@ -324,6 +320,7 @@ impl SurfMlpFeatureMap {
 
     #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
     #[target_feature = "+sse2"]
+    #[allow(unused)]
     unsafe fn vector_cumulative_add_sse2(x: *const i32, len: usize, num_channel: u32) {
         let mut x1: __m128i;
         let mut y1: __m128i;
@@ -333,7 +330,7 @@ impl SurfMlpFeatureMap {
         let mut z2 = y2;
 
         let len = len / num_channel as usize - 1;
-        for i in 0..len {
+        for _ in 0..len {
             // first 4 channels
             x1 = _mm_loadu_si128(x2);
             x2 = x2.offset(1);

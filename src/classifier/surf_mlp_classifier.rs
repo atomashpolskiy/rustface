@@ -49,10 +49,6 @@ impl TwoWayBuffer {
         &mut self.input
     }
 
-    fn get_output(&mut self) -> &mut Vec<f32> {
-        &mut self.output
-    }
-
     fn swap(&mut self) {
         unsafe {
             ptr::swap(&mut self.input, &mut self.output);
@@ -158,10 +154,7 @@ impl Layer {
         self.weights.par_chunks(self.input_dim)
             .zip(&self.biases)
             .zip(output).for_each(|((weights, bias), output)| {
-                let x;
-                unsafe {
-                    x = math::vector_inner_product(input.as_ptr(), weights.as_ptr(), self.input_dim) + bias;
-                }
+                let x = math::vector_inner_product(input.as_ptr(), weights.as_ptr(), self.input_dim) + bias;
                 *output = (self.act_func)(x);
             });
     }

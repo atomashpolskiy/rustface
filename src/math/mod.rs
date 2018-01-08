@@ -43,6 +43,7 @@ pub fn square(src: *const i32, dest: *mut u32, length: usize) {
         }
 }
 
+#[allow(unused)]
 fn square_portable(src: *const i32, dest: *mut u32, length: usize) {
     unsafe {
         for i in 0..length as isize {
@@ -54,6 +55,7 @@ fn square_portable(src: *const i32, dest: *mut u32, length: usize) {
 
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 #[target_feature = "+avx2"]
+#[allow(unused)]
 unsafe fn square_avx2(src: *const i32, dest: *mut u32, length: usize) {
     let mut i: isize = 0;
 
@@ -72,7 +74,7 @@ unsafe fn square_avx2(src: *const i32, dest: *mut u32, length: usize) {
         i += 8;
     }
 
-    for k in i..(length as isize) {
+    for _ in i..(length as isize) {
         let value = *src.offset(i);
         *dest.offset(i) = i32::pow(value, 2) as u32;
     }
@@ -91,6 +93,7 @@ pub fn abs(src: *const i32, dest: *mut i32, length: usize) {
         }
 }
 
+#[allow(unused)]
 fn abs_portable(src: *const i32, dest: *mut i32, length: usize) {
     unsafe {
         for i in 0..length as isize {
@@ -102,6 +105,7 @@ fn abs_portable(src: *const i32, dest: *mut i32, length: usize) {
 
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 #[target_feature = "+ssse3"]
+#[allow(unused)]
 unsafe fn abs_ssse3(src: *const i32, dest: *mut i32, length: usize) {
     let mut i: isize = 0;
 
@@ -140,6 +144,7 @@ pub fn vector_add(left: *const i32, right: *const i32, dest: *mut i32, length: u
         }
 }
 
+#[allow(unused)]
 fn vector_add_portable(left: *const i32, right: *const i32, dest: *mut i32, length: usize) {
     unsafe {
         for i in 0..length as isize {
@@ -150,6 +155,7 @@ fn vector_add_portable(left: *const i32, right: *const i32, dest: *mut i32, leng
 
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 #[target_feature = "+sse2"]
+#[allow(unused)]
 unsafe fn vector_add_sse2(left: *const i32, right: *const i32, dest: *mut i32, length: usize) {
     let mut i: isize = 0;
 
@@ -189,6 +195,7 @@ pub fn vector_sub(left: *const i32, right: *const i32, dest: *mut i32, length: u
         }
 }
 
+#[allow(unused)]
 fn vector_sub_portable(left: *const i32, right: *const i32, dest: *mut i32, length: usize) {
     unsafe {
         for i in 0..length as isize {
@@ -199,6 +206,7 @@ fn vector_sub_portable(left: *const i32, right: *const i32, dest: *mut i32, leng
 
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 #[target_feature = "+sse2"]
+#[allow(unused)]
 unsafe fn vector_sub_sse2(left: *const i32, right: *const i32, dest: *mut i32, length: usize) {
     let mut i: isize = 0;
 
@@ -238,6 +246,7 @@ pub fn vector_inner_product(left: *const f32, right: *const f32, length: usize) 
         }
 }
 
+#[allow(unused)]
 fn vector_inner_product_portable(left: *const f32, right: *const f32, length: usize) -> f32 {
     let mut product = 0.0;
     unsafe {
@@ -250,8 +259,9 @@ fn vector_inner_product_portable(left: *const f32, right: *const f32, length: us
 
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 #[target_feature = "+sse"]
+#[allow(unused)]
 unsafe fn vector_inner_product_sse(left: *const f32, right: *const f32, length: usize) -> f32 {
-    let mut product = 0.0;
+    let mut product;
     let mut i: isize = 0;
 
     let mut x1: f32x4;
