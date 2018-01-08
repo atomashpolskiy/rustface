@@ -76,15 +76,19 @@ cargo build --release --features opencv-demo
 
 ## Run demo
 
-Code for the demo is located in `src/bin/opencv-demo/main.rs` file. It performs face detection for the given image and opens it in a separate window.
+Code for the demo is located in `src/bin/opencv-demo/main.rs` file. It performs face detection for the given image and opens it in a separate window. 
+
+Please note that this library makes use of [Rayon](https://github.com/rayon-rs/rayon) framework to parallelize some computations. By default, **Rayon** spawns the same number of threads as the number of CPUs (logicals cores) available. Instead of making things faster, the penalty of switching between so many threads may severely hurt the performance, so it's strongly advised to keep the number of threads small by manually setting `RAYON_NUM_THREADS` environment variable.
 
 ```
+# empirically found to be the sweet spot for the number of threads
+export RAYON_NUM_THREADS=2
 cargo run --release --features opencv-demo model/seeta_fd_frontal_v1.0.bin <path-to-image>
 ```
 
 ## TODO
 
-* Parallelize some CPU intensive loops
+* Parallelize remaining CPU intensive loops
 * Tests (it would make sense to start with an integration test for `Detector::detect`, based on the results retrieved from the original library)
 
 ## License
