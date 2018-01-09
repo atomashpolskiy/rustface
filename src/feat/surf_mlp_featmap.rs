@@ -499,8 +499,8 @@ impl SurfMlpFeatureMap {
                 }
             }
 
-            for j in 0..k_num_int_channel as usize {
-                cell_top_right[j] = cell_top_right[j].offset(offset);
+            for j in cell_top_right.iter_mut().take(k_num_int_channel as usize) {
+                *j = j.offset(offset);
             }
         }
     }
@@ -586,7 +586,7 @@ impl FeaturePool {
         let mut feature_vecs = vec![];
 
         if self.sample_height - self.patch_min_height <= self.sample_width - self.patch_min_width {
-            for ref format in self.patch_formats.iter() {
+            for format in &self.patch_formats {
                 for h in Seq::new(self.patch_min_height, |x| x + self.patch_size_inc_step)
                     .take_while(|x| *x <= self.sample_height) {
 
@@ -601,7 +601,7 @@ impl FeaturePool {
                 }
             }
         } else {
-            for ref format in self.patch_formats.iter() {
+            for format in &self.patch_formats {
                 // original condition was <= self.patch_min_width,
                 // but it would not make sense to have a loop in such case
                 for w in Seq::new(self.patch_min_width, |x| x + self.patch_size_inc_step)
@@ -642,7 +642,7 @@ impl FeaturePool {
         self.features.len()
     }
 
-    fn get_feature<'a>(&'a self, feature_id: usize) -> &'a Feature {
+    fn get_feature(&self, feature_id: usize) -> &Feature {
         &self.features[feature_id]
     }
 

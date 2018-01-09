@@ -105,7 +105,7 @@ impl ModelReader {
                     let classifier_kind = ClassifierKind::from(classifier_kind_id);
 
                     match classifier_kind {
-                        Some(classifier_kind) => {
+                        Some(ref classifier_kind) => {
                             model.classifiers.push(self.create_classifier(classifier_kind)?);
                         },
                         None => panic!("Unexpected classifier kind id: {}", classifier_kind_id)
@@ -129,8 +129,8 @@ impl ModelReader {
         Ok(model)
     }
 
-    fn create_classifier(&mut self, classifier_kind: ClassifierKind) -> Result<Box<Classifier>, io::Error> {
-        match classifier_kind {
+    fn create_classifier(&mut self, classifier_kind: &ClassifierKind) -> Result<Box<Classifier>, io::Error> {
+        match *classifier_kind {
             ClassifierKind::LabBoosted => {
                 let mut classifier = LabBoostedClassifier::new(Rc::clone(&self.lab_boosted_feature_map));
                 self.read_lab_boosted_model(&mut classifier)?;

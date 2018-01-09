@@ -283,13 +283,17 @@ impl FuStDetector {
                             wnd_info.bbox_mut().set_x((x as f32 / scale_factor + 0.5) as i32);
                             wnd_info.bbox_mut().set_y((y as f32 / scale_factor + 0.5) as i32);
 
-                            for i in 0..first_hierarchy_size {
-                                let score = (&mut *self.model.get_classifiers()[i]).classify(None);
-                                if score.is_positive() {
-                                    wnd_info.set_score(score.score() as f64);
-                                    proposals[i].push(wnd_info.clone());
+                            for (classifier, proposal) in
+                                self.model.get_classifiers().iter_mut()
+                                    .zip(proposals.iter_mut())
+                                    .take(first_hierarchy_size)
+                                {
+                                    let score = classifier.classify(None);
+                                    if score.is_positive() {
+                                        wnd_info.set_score(score.score() as f64);
+                                        proposal.push(wnd_info.clone());
+                                    }
                                 }
-                            }
                         }
                     }
                 },
@@ -308,29 +312,31 @@ impl FuStDetector {
 
         let mut cls_idx = first_hierarchy_size;
         let mut model_idx = first_hierarchy_size;
-        let mut buf_idx = vec![];
+        let mut buf_idx: Vec<i32> = vec![];
 
         for i in 1..self.model.get_hierarchy_count() {
 
             let hierarchy_size_i = self.model.get_hierarchy_size(i) as usize;
-            buf_idx.resize(hierarchy_size_i, 0);
+            if buf_idx.len() < hierarchy_size_i {
+                buf_idx.resize(hierarchy_size_i, 0);
+            }
 
-            for j in 0..hierarchy_size_i as usize {
-                let r;
+            for r in buf_idx.iter_mut().take(hierarchy_size_i as usize) {
                 {
                     let wnd_src = self.model.get_wnd_src(cls_idx);
+                    *r = wnd_src[0];
                     let num_wnd_src = wnd_src.len();
-                    buf_idx[j] = wnd_src[0];
-                    r = buf_idx[j] as usize;
+                    let r = *r as usize;
                     proposals[r].clear();
 
-                    for k in 0..num_wnd_src {
-                        for ref item in proposals_nms[wnd_src[k] as usize].iter() {
+                    for k in wnd_src.iter().take(num_wnd_src) {
+                        for item in &proposals_nms[*k as usize] {
                             let last_index = proposals[r].len();
-                            proposals[r].insert(last_index, (*item).clone());
+                            proposals[r].insert(last_index, item.clone());
                         }
                     }
                 }
+                let r = *r as usize;
 
                 let k_max = self.model.get_num_stage(cls_idx);
                 for k in 0..k_max {

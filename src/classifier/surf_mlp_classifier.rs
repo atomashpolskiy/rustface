@@ -150,7 +150,7 @@ struct Layer {
 }
 
 impl Layer {
-    fn compute(&self, input: &Vec<f32>, output: &mut Vec<f32>) {
+    fn compute(&self, input: &[f32], output: &mut [f32]) {
         self.weights.par_chunks(self.input_dim)
             .zip(&self.biases)
             .zip(output).for_each(|((weights, bias), output)| {
@@ -170,11 +170,11 @@ impl Layer {
 
 impl Classifier for SurfMlpClassifier {
     fn classify(&mut self, output: Option<&mut Vec<f32>>) -> Score {
-        if let None = self.input_buf {
+        if self.input_buf.is_none() {
             let input_layer = self.layers.get(0).expect("No layers");
             self.input_buf = Some(vec![0.0; input_layer.input_size()]);
         }
-        if let None = self.output_buf {
+        if self.output_buf.is_none() {
             let num_layers = self.layers.len();
             let output_layer = self.layers.get(num_layers - 1).expect("No layers");
             self.output_buf = Some(vec![0.0; output_layer.output_size()]);
