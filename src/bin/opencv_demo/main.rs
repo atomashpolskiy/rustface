@@ -27,6 +27,7 @@ use opencv::core::{Mat, Rect, rectangle, Scalar};
 use opencv::highgui::{destroy_all_windows, imread, IMREAD_UNCHANGED, imshow, named_window, wait_key, WINDOW_AUTOSIZE};
 use opencv::imgproc::{cvt_color, COLOR_BGR2GRAY};
 
+#[allow(unused_imports)]
 use cpuprofiler::PROFILER;
 
 use rustface::{Detector, FaceInfo, ImageData};
@@ -36,7 +37,7 @@ fn main() {
         Ok(options) => options,
         Err(message) => {
             println!("Failed to parse program arguments: {}", message);
-            std::process::exit(1);
+            std::process::exit(1)
         }
     };
 
@@ -44,7 +45,7 @@ fn main() {
         Ok(detector) => detector,
         Err(error) => {
             println!("Failed to create detector: {}", error.to_string());
-            std::process::exit(1);
+            std::process::exit(1)
         }
     };
 
@@ -53,24 +54,23 @@ fn main() {
     detector.set_pyramid_scale_factor(0.8);
     detector.set_slide_window_step(4, 4);
 
-    let mut mat: Mat = match imread(&options.image_path(), IMREAD_UNCHANGED) {
+    let mut mat: Mat = match imread(options.image_path(), IMREAD_UNCHANGED) {
         Ok(image) => image,
         Err(message) => {
             println!("Failed to read image: {}", message);
-            std::process::exit(1);
+            std::process::exit(1)
         }
     };
 
-    let faces;
-    if mat.channels().unwrap() != 1 {
+    let faces = if mat.channels().unwrap() != 1 {
         let mut mat_gray = Mat::new().unwrap();
         cvt_color(&mat, &mat_gray, COLOR_BGR2GRAY, 0).expect("Failed to convert image to gray scale");
-        faces = detect_faces(&mut detector, &mut mat_gray);
+        detect_faces(&mut *detector, &mut mat_gray)
     } else {
-        faces = detect_faces(&mut detector, &mut mat);
-    }
+        detect_faces(&mut *detector, &mut mat)
+    };
 
-    for face in faces.into_iter() {
+    for face in faces {
         let rect = Rect {
             x: face.bbox().x(),
             y: face.bbox().y(),
@@ -86,7 +86,7 @@ fn main() {
     destroy_all_windows().unwrap();
 }
 
-fn detect_faces(detector: &mut Box<Detector>, mat: &mut Mat) -> Vec<FaceInfo> {
+fn detect_faces(detector: &mut Detector, mat: &mut Mat) -> Vec<FaceInfo> {
     let image_size = mat.size().unwrap();
     let mut image = ImageData::new(mat.ptr0(0).unwrap(), image_size.width as u32, image_size.height as u32);
     let now = Instant::now();
@@ -99,7 +99,7 @@ fn detect_faces(detector: &mut Box<Detector>, mat: &mut Mat) -> Vec<FaceInfo> {
 }
 
 fn get_millis(duration: Duration) -> u64 {
-    duration.as_secs() * 1000u64 + (duration.subsec_nanos() / 1_000_000) as u64
+    duration.as_secs() * 1000u64 + u64::from(duration.subsec_nanos() / 1_000_000)
 }
 
 struct Options {

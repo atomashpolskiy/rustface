@@ -101,6 +101,7 @@ impl ImagePyramid {
         }
     }
 
+    #[allow(dead_code)]
     pub fn set_max_scale(&mut self, max_scale: f32) {
         self.max_scale = max_scale;
         self.scale_factor = max_scale;
