@@ -248,7 +248,6 @@ impl FuStDetector {
 
     fn detect_impl(&mut self, image: &mut ImagePyramid) -> Vec<FaceInfo> {
         let mut scale_factor = 0.0;
-        let mut image_scaled_optional = image.get_next_scale_image(&mut scale_factor);
 
         let mut wnd_info = FaceInfo::new();
         let first_hierarchy_size = self.model.get_hierarchy_size(0) as usize;
@@ -261,45 +260,39 @@ impl FuStDetector {
             proposals_nms.push(vec![]);
         }
 
-        loop {
-            match image_scaled_optional {
-                Some(ref image_scaled) => {
-                    self.model.get_classifiers()[0].compute(image_scaled);
+        while let Some(ref image_scaled) = image.get_next_scale_image(&mut scale_factor) {
+            self.model.get_classifiers()[0].compute(image_scaled);
 
-                    let width = (self.wnd_size as f32 / scale_factor + 0.5) as u32;
-                    wnd_info.bbox_mut().set_width(width);
-                    wnd_info.bbox_mut().set_height(width);
+            let width = (self.wnd_size as f32 / scale_factor + 0.5) as u32;
+            wnd_info.bbox_mut().set_width(width);
+            wnd_info.bbox_mut().set_height(width);
 
-                    let step_x = self.slide_wnd_step_x;
-                    let step_y = self.slide_wnd_step_y;
-                    let max_x = image_scaled.width() - self.wnd_size;
-                    let max_y = image_scaled.height() - self.wnd_size;
+            let step_x = self.slide_wnd_step_x;
+            let step_y = self.slide_wnd_step_y;
+            let max_x = image_scaled.width() - self.wnd_size;
+            let max_y = image_scaled.height() - self.wnd_size;
 
-                    for y in Seq::new(0, move |n| n + step_y).take_while(move |n| *n <= max_y) {
-                        for x in Seq::new(0, move |n| n + step_x).take_while(move |n| *n <= max_x) {
+            for y in Seq::new(0, move |n| n + step_y).take_while(move |n| *n <= max_y) {
+                for x in Seq::new(0, move |n| n + step_x).take_while(move |n| *n <= max_x) {
 
-                            self.model.get_classifiers()[0].set_roi(Rectangle::new(x as i32, y as i32, self.wnd_size, self.wnd_size));
+                    self.model.get_classifiers()[0].set_roi(Rectangle::new(x as i32, y as i32, self.wnd_size, self.wnd_size));
 
-                            wnd_info.bbox_mut().set_x((x as f32 / scale_factor + 0.5) as i32);
-                            wnd_info.bbox_mut().set_y((y as f32 / scale_factor + 0.5) as i32);
+                    wnd_info.bbox_mut().set_x((x as f32 / scale_factor + 0.5) as i32);
+                    wnd_info.bbox_mut().set_y((y as f32 / scale_factor + 0.5) as i32);
 
-                            for (classifier, proposal) in
-                                self.model.get_classifiers().iter_mut()
-                                    .zip(proposals.iter_mut())
-                                    .take(first_hierarchy_size)
-                                {
-                                    let score = classifier.classify(None);
-                                    if score.is_positive() {
-                                        wnd_info.set_score(f64::from(score.score()));
-                                        proposal.push(wnd_info.clone());
-                                    }
-                                }
+                    for (classifier, proposal) in
+                        self.model.get_classifiers().iter_mut()
+                            .zip(proposals.iter_mut())
+                            .take(first_hierarchy_size)
+                        {
+                            let score = classifier.classify(None);
+                            if score.is_positive() {
+                                wnd_info.set_score(f64::from(score.score()));
+                                proposal.push(wnd_info.clone());
+                            }
                         }
-                    }
-                },
-                None => break,
+                }
             }
-            image_scaled_optional = image.get_next_scale_image(&mut scale_factor);
         }
 
         for i in 0..first_hierarchy_size {
