@@ -39,8 +39,9 @@ Image size: 1666x1136
 Number of faces: 29
 
 CPU: 2,3 GHz Intel Core i7
-Single-thread (OpenMP disabled, Rayon threads set to 1)
+Single-threaded (OpenMP disabled, Rayon threads set to 1)
 SIMD enabled
+LTO disabled
 
 * Original *
 samples (ms): 893,893,891,883,884,883,890,908,893,879
@@ -54,6 +55,18 @@ stddev (ms): 6.024
 ```
 
 In this particular test the Rust version has been **4% faster on average** than its C++ counterpart.
+
+When using multiple threads and enabling LTO (link-time optimization), Rust performance is a tad better (I observe a **8% boost**):
+
+```
+Multi-threaded (Rayon threads set to 2)
+LTO enabled
+
+* Rustface *
+samples (ms): 787,789,795,795,787,785,791,799,795,788
+mean (ms): 791.1
+stddev (ms): 4.39
+```
 
 ## Usage example
 
