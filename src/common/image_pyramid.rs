@@ -180,25 +180,25 @@ pub fn resize_image(src: &ImageData, dest: *mut u8, width: u32, height: u32) {
 
     let src_data = src.data();
 
-    let lf_x_scl = src.width() as f64 / width as f64;
-    let lf_y_scl = src.height() as f64 / height as f64;
+    let lf_x_scl = f64::from(src.width()) / f64::from(width);
+    let lf_y_scl = f64::from(src.height()) / f64::from(height);
 
     unsafe {
         for y in 0..height {
             for x in 0..width {
-                let lf_x_s = lf_x_scl * x as f64;
-                let lf_y_s = lf_y_scl * y as f64;
+                let lf_x_s = lf_x_scl * f64::from(x);
+                let lf_y_s = lf_y_scl * f64::from(y);
 
                 let n_x_s = cmp::min(lf_x_s as u32, (src.width() - 2));
                 let n_y_s = cmp::min(lf_y_s as u32, (src.height() - 2));
 
-                let lf_weight_x = lf_x_s - (n_x_s as f64);
-                let lf_weight_y = lf_y_s - (n_y_s as f64);
+                let lf_weight_x = lf_x_s - f64::from(n_x_s);
+                let lf_weight_y = lf_y_s - f64::from(n_y_s);
 
-                let d1 = *src_data.offset((n_y_s * src.width() + n_x_s) as isize) as f64;
-                let d2 = *src_data.offset((n_y_s * src.width() + n_x_s + 1) as isize) as f64;
-                let d3 = *src_data.offset(((n_y_s + 1) * src.width() + n_x_s) as isize) as f64;
-                let d4 = *src_data.offset(((n_y_s + 1) * src.width() + n_x_s + 1) as isize) as f64;
+                let d1 = f64::from(*src_data.offset((n_y_s * src.width() + n_x_s) as isize));
+                let d2 = f64::from(*src_data.offset((n_y_s * src.width() + n_x_s + 1) as isize));
+                let d3 = f64::from(*src_data.offset(((n_y_s + 1) * src.width() + n_x_s) as isize));
+                let d4 = f64::from(*src_data.offset(((n_y_s + 1) * src.width() + n_x_s + 1) as isize));
 
                 let dest_val = (1.0 - lf_weight_y) * ((1.0 - lf_weight_x) * d1 + lf_weight_x * d2) +
                     lf_weight_y * ((1.0 - lf_weight_x) * d3 + lf_weight_x * d4);

@@ -77,8 +77,8 @@ pub struct FaceInfo {
     score: f64,
 }
 
-impl FaceInfo {
-    pub fn new() -> Self {
+impl Default for FaceInfo {
+    fn default() -> Self {
         FaceInfo {
             bbox: Rectangle::new(0, 0, 0, 0),
             roll: 0.0,
@@ -86,6 +86,12 @@ impl FaceInfo {
             yaw: 0.0,
             score: 0.0,
         }
+    }
+}
+
+impl FaceInfo {
+    pub fn new() -> Self {
+        FaceInfo::default()
     }
 
     pub fn bbox(&self) -> &Rectangle {

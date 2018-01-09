@@ -25,7 +25,7 @@ use stdsimd::vendor::{__m128i, __m256i,
 pub fn copy_u8_to_i32(src: *const u8, dest: *mut i32, length: usize) {
     unsafe {
         for i in 0..length as isize {
-            *dest.offset(i) = *src.offset(i) as i32;
+            *dest.offset(i) = i32::from(*src.offset(i));
         }
     }
 }

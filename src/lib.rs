@@ -290,7 +290,7 @@ impl FuStDetector {
                                 {
                                     let score = classifier.classify(None);
                                     if score.is_positive() {
-                                        wnd_info.set_score(score.score() as f64);
+                                        wnd_info.set_score(f64::from(score.score()));
                                         proposal.push(wnd_info.clone());
                                     }
                                 }
@@ -373,7 +373,7 @@ impl FuStDetector {
                                 bboxes[bbox_id].bbox_mut().set_y(
                                     ((mlp_predicts[2] * 2.0 - 1.0) * h + y + (h - bbox_w) * 0.5 + 0.5).floor() as i32);
 
-                                bboxes[bbox_id].set_score(new_score.score() as f64);
+                                bboxes[bbox_id].set_score(f64::from(new_score.score()));
 
                                 bbox_id += 1;
                             }
