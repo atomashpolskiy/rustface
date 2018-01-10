@@ -72,14 +72,14 @@ pub fn load_model(path: &str) -> Result<Model, io::Error> {
     ModelReader::new(buf).read()
 }
 
-struct ModelReader {
+pub struct ModelReader {
     reader: Cursor<Vec<u8>>,
     lab_boosted_feature_map: Rc<RefCell<LabBoostedFeatureMap>>,
     surf_mlp_feature_map: Rc<RefCell<SurfMlpFeatureMap>>,
 }
 
 impl ModelReader {
-    fn new(buf: Vec<u8>) -> Self {
+    pub fn new(buf: Vec<u8>) -> Self {
         ModelReader {
             reader: Cursor::new(buf),
             lab_boosted_feature_map: Rc::new(RefCell::new(LabBoostedFeatureMap::new())),
