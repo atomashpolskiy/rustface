@@ -24,6 +24,10 @@
     </a>
 </p>
 
+* **[SEETAFACE C++](https://github.com/seetaface/SeetaFaceEngine/tree/master/FaceDetection)** – Github repository for the original library
+* **[PYTHON BINDINGS](https://github.com/torchbox/rustface-py)** – call Rustface from Python code
+* **[LICENSE](https://github.com/atomashpolskiy/rustface/blob/master/LICENSE)** – licensed under permissive BSD 2-Clause
+
 ## About
 
 SeetaFace Detection is an implementation of Funnel-Structured cascade, which is designed for **real-time** multi-view face detection. FuSt aims at a good trade-off between accuracy and speed by using a coarse-to-fine structure. It consists of multiple view-specific fast LAB cascade classifiers at early stages, followed by coarse Multilayer Perceptron (MLP) cascades at later stages. The final stage is one unified fine MLP cascade, processing all proposed windows in a centralized style. 
