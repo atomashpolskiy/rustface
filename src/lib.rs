@@ -123,7 +123,7 @@ fn is_legal_image(image: &ImageData) -> bool {
     image.num_channels() == 1 && image.width() > 0 && image.height() > 0
 }
 
-struct FuStDetector {
+pub struct FuStDetector {
     model: Model,
     wnd_data_buf: Vec<u8>,
     wnd_data: Vec<u8>,
@@ -137,7 +137,7 @@ struct FuStDetector {
 }
 
 impl FuStDetector {
-    fn new(model: Model) -> Self {
+    pub fn new(model: Model) -> Self {
         let wnd_size = 40;
         let slide_wnd_step_x = 4;
         let slide_wnd_step_y = 4;
