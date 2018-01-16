@@ -14,6 +14,14 @@
 </p>
 
 <p align="left">
+    <a href="https://crates.io/crates/rustface">
+        <img src="https://img.shields.io/crates/v/rustface.svg"
+             alt="crates.io">
+    </a>
+    <a href="https://docs.rs/rustface">
+            <img src="https://docs.rs/rustface/badge.svg"
+                 alt="docs.rs">
+        </a>
     <a href="https://travis-ci.org/atomashpolskiy/rustface">
         <img src="https://img.shields.io/travis/atomashpolskiy/rustface/master.svg"
              alt="Linux build">
