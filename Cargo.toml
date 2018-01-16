@@ -1,7 +1,16 @@
 [package]
 name = "rustface"
+description = "Face detection library, based on the C++ SeetaFace engine."
 version = "0.1.0"
+repository = "https://github.com/atomashpolskiy/rustface"
+readme = "README.md"
+keywords = ["face", "detection"]
+categories = ["multimedia::images", "science"]
 authors = ["Andrei Tomashpolskiy <nordmann89@gmail.com>"]
+license = "BSD-2-Clause"
+exclude = [
+    "assets/*",
+]
 
 [dependencies]
 num = "0.1.41"
