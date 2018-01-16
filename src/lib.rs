@@ -48,29 +48,6 @@ pub fn create_detector_with_model(model: Model) -> Box<Detector> {
     Box::new(FuStDetector::new(model))
 }
 
-/// Face detector.
-///
-/// # Examples
-///
-/// ```rust
-/// extern crate rustface;
-///
-/// use rustface::{Detector, FaceInfo, ImageData};
-///
-/// fn main() {
-///     let mut detector = rustface::create_detector("/path/to/model").unwrap();
-///     detector.set_min_face_size(20);
-///     detector.set_score_thresh(2.0);
-///     detector.set_pyramid_scale_factor(0.8);
-///     detector.set_slide_window_step(4, 4);
-///
-///     let mut image = ImageData::new(bytes, width, height);
-///     for face in detector.detect(&mut image).into_iter() {
-///         // print confidence score and coordinates
-///         println!("found face: {:?}", face);
-///     }
-/// }
-/// ```
 pub trait Detector {
     /// Detect faces on input image.
     ///
