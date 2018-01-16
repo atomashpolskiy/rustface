@@ -359,7 +359,7 @@ mod tests {
 
     #[test]
     fn test_vector_inner_product_portable() {
-        let mut vec = vec![1.0, 2.0, 3.0];
+        let vec = vec![1.0, 2.0, 3.0];
         let result = vector_inner_product_portable(vec.as_ptr(), vec.as_ptr(), vec.len());
         assert_eq!(14.0, result);
     }
@@ -367,7 +367,7 @@ mod tests {
     #[test]
     #[cfg(all(any(target_arch = "x86_64", target_arch = "x86"), target_feature = "sse"))]
     fn test_vector_inner_product_sse() {
-        let mut vec = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0];
+        let vec = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0];
         let result = unsafe {
             vector_inner_product_sse(vec.as_ptr(), vec.as_ptr(), vec.len())
         };
