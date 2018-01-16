@@ -19,6 +19,7 @@
 use std::ptr;
 use std::cmp;
 
+#[derive(Debug)]
 pub struct ImageData {
     data: *const u8,
     width: u32,
