@@ -17,15 +17,10 @@ num = "0.1.41"
 byteorder = "1.2.1"
 stdsimd = "0.0.3"
 rayon = "0.9.0"
-opencv = { version = "0.2.3", optional = true }
-cpuprofiler = { version = "0.0.3", optional = true }
 
-[features]
-opencv-demo = ["opencv", "cpuprofiler"]
-
-[[bin]]
-required-features = ["opencv-demo"]
-name = "opencv_demo"
+[dev-dependencies]
+opencv = "0.2.3"
+cpuprofiler = "0.0.3"
 
 [profile.release]
 lto = true
