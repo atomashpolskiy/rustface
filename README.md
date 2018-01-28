@@ -141,6 +141,22 @@ cargo run --release --example image_demo model/seeta_fd_frontal_v1.0.bin <path-t
 * Parallelize remaining CPU intensive loops
 * Tests (it would make sense to start with an integration test for `Detector::detect`, based on the results retrieved from the original library)
 
+## Authors
+
+- Andrei Tomashpolskiy \<nordmann89@gmail.com\>
+  
+  _Original developer and maintainer_
+    
+- Ashley \<[github.com/expenses](https://github.com/expenses)\>
+
+  _Contributed the switch from OpenCV to [Image](https://crates.io/crates/image)_
+
+This library is based on the following works:
+
+- Face detection method described in the paper: _"Funnel-structured cascade for multi-view face detection with alignment awareness, Shuzhe Wu, Meina Kan, Zhenliang He, Shiguang Shan, Xilin Chen. In Neurocomputing (under review)"_
+
+- [original C++ implementation](https://github.com/seetaface/SeetaFaceEngine/tree/master/FaceDetection)
+
 ## License
 
 Original SeetaFace Detection is released under the [BSD 2-Clause license](https://github.com/seetaface/SeetaFaceEngine/blob/master/LICENSE). This project is a derivative work and uses the same license as the original.
