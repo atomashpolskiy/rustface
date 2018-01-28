@@ -86,7 +86,7 @@ fn detect_faces(detector: &mut Detector, gray: &GrayImage) -> Vec<FaceInfo> {
     let mut image = ImageData::new(gray.as_ptr(), width, height);
     let now = Instant::now();
     // uncomment to profile
-    // PROFILER.lock().unwrap().start("./opencv_demo.profile").unwrap();
+    // PROFILER.lock().unwrap().start("./image_demo.profile").unwrap();
     let faces = detector.detect(&mut image);
     // PROFILER.lock().unwrap().stop().unwrap();
     println!("Found {} faces in {} ms", faces.len(), get_millis(now.elapsed()));

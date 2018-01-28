@@ -104,9 +104,9 @@ fn main() {
 
 ## How to build
 
-The project is a library crate, but also contains an optional runnable module for demonstration purposes. In order to build it, you'll need an OpenCV 2.4 installation for [generation of Rust bindings](https://github.com/kali/opencv-rust).
+The project is a library crate and also contains a runnable example for demonstration purposes.
 
-Also, due to usage of [experimental stdsimd crate](https://github.com/rust-lang-nursery/stdsimd) for SIMD support, the project relies on the nightly Rust toolchain, so you'll need to install it and set it as the default:
+Due to usage of [experimental stdsimd crate](https://github.com/rust-lang-nursery/stdsimd) for SIMD support, the project relies on the nightly Rust toolchain, so you'll need to install it and set it as the default:
 
 ```
 rustup default nightly
@@ -118,22 +118,22 @@ Then just use the standard Cargo `build` command:
 cargo build --release
 ```
 
-To build the runnable demo, specify the `opencv-demo` feature in the Cargo command line:
-
-```
-cargo build --release --features opencv-demo
-```
-
 ## Run demo
 
-Code for the demo is located in `src/bin/opencv-demo/main.rs` file. It performs face detection for the given image and opens it in a separate window. 
+Code for the demo is located in `examples/image_demo.rs` file. It performs face detection for a given image and saves the result into a file in the working directory.
+
+The simplest way to run the demo is to use the `bin/test.sh` script:
+
+```
+./bin/test.sh <path-to-image>
+```
 
 Please note that this library makes use of [Rayon](https://github.com/rayon-rs/rayon) framework to parallelize some computations. By default, **Rayon** spawns the same number of threads as the number of CPUs (logicals cores) available. Instead of making things faster, the penalty of switching between so many threads may severely hurt the performance, so it's strongly advised to keep the number of threads small by manually setting `RAYON_NUM_THREADS` environment variable.
 
 ```
 # empirically found to be the sweet spot for the number of threads
 export RAYON_NUM_THREADS=2
-cargo run --release --features opencv-demo model/seeta_fd_frontal_v1.0.bin <path-to-image>
+cargo run --release --example image_demo model/seeta_fd_frontal_v1.0.bin <path-to-image>
 ```
 
 ## TODO
