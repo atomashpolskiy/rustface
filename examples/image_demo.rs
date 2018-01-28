@@ -33,6 +33,8 @@ use cpuprofiler::PROFILER;
 
 use rustface::{Detector, FaceInfo, ImageData};
 
+const OUTPUT_FILE: &str = "test.png";
+
 fn main() {
     let options = match Options::parse(std::env::args()) {
         Ok(options) => options,
@@ -73,7 +75,10 @@ fn main() {
         draw_hollow_rect_mut(&mut rgb, rect, Rgb([255, 0, 0]));
     }
 
-    rgb.save("test.png").unwrap();
+    match rgb.save(OUTPUT_FILE) {
+        Ok(_) => println!("Saved result to {}", OUTPUT_FILE),
+        Err(message) => println!("Failed to save result to a file. Reason: {}", message),
+    }
 }
 
 fn detect_faces(detector: &mut Detector, gray: &GrayImage) -> Vec<FaceInfo> {
