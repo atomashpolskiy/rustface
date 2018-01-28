@@ -19,7 +19,8 @@ stdsimd = "0.0.3"
 rayon = "0.9.0"
 
 [dev-dependencies]
-opencv = "0.2.3"
+image = "0.18.0"
+imageproc = "0.13.0"
 cpuprofiler = "0.0.3"
 
 [profile.release]

@@ -17,15 +17,16 @@
 // If not, see < https://opensource.org/licenses/BSD-2-Clause>.
 
 extern crate rustface;
-extern crate opencv;
+extern crate image;
+extern crate imageproc;
 extern crate cpuprofiler;
 
 use std::env::Args;
 use std::time::{Duration, Instant};
 
-use opencv::core::{Mat, Rect, rectangle, Scalar};
-use opencv::highgui::{destroy_all_windows, imread, IMREAD_UNCHANGED, imshow, named_window, wait_key, WINDOW_AUTOSIZE};
-use opencv::imgproc::{cvt_color, COLOR_BGR2GRAY};
+use image::{DynamicImage, GrayImage, Rgb};
+use imageproc::drawing::draw_hollow_rect_mut;
+use imageproc::rect::Rect;
 
 #[allow(unused_imports)]
 use cpuprofiler::PROFILER;
@@ -54,7 +55,7 @@ fn main() {
     detector.set_pyramid_scale_factor(0.8);
     detector.set_slide_window_step(4, 4);
 
-    let mut mat: Mat = match imread(options.image_path(), IMREAD_UNCHANGED) {
+    let image: DynamicImage = match image::open(options.image_path()) {
         Ok(image) => image,
         Err(message) => {
             println!("Failed to read image: {}", message);
@@ -62,33 +63,22 @@ fn main() {
         }
     };
 
-    let faces = if mat.channels().unwrap() != 1 {
-        let mut mat_gray = Mat::new().unwrap();
-        cvt_color(&mat, &mat_gray, COLOR_BGR2GRAY, 0).expect("Failed to convert image to gray scale");
-        detect_faces(&mut *detector, &mut mat_gray)
-    } else {
-        detect_faces(&mut *detector, &mut mat)
-    };
+    let mut rgb = image.to_rgb();
+    let faces = detect_faces(&mut *detector, &image.to_luma());
 
     for face in faces {
-        let rect = Rect {
-            x: face.bbox().x(),
-            y: face.bbox().y(),
-            width: face.bbox().width() as i32,
-            height: face.bbox().height() as i32,
-        };
-        rectangle(&mat, rect, Scalar {data: [0.0, 0.0, 255.0, 0.0]}, 4, 8, 0).unwrap();
+        let bbox = face.bbox();
+        let rect = Rect::at(bbox.x(), bbox.y()).of_size(bbox.width(), bbox.height());
+        
+        draw_hollow_rect_mut(&mut rgb, rect, Rgb([255, 0, 0]));
     }
 
-    named_window("Test", WINDOW_AUTOSIZE).unwrap();
-    imshow("Test", &mat).unwrap();
-    wait_key(0).unwrap();
-    destroy_all_windows().unwrap();
+    rgb.save("test.png").unwrap();
 }
 
-fn detect_faces(detector: &mut Detector, mat: &mut Mat) -> Vec<FaceInfo> {
-    let image_size = mat.size().unwrap();
-    let mut image = ImageData::new(mat.ptr0(0).unwrap(), image_size.width as u32, image_size.height as u32);
+fn detect_faces(detector: &mut Detector, gray: &GrayImage) -> Vec<FaceInfo> {
+    let (width, height) = gray.dimensions();
+    let mut image = ImageData::new(gray.as_ptr(), width, height);
     let now = Instant::now();
     // uncomment to profile
     // PROFILER.lock().unwrap().start("./opencv_demo.profile").unwrap();
