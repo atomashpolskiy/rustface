@@ -1,3 +1,21 @@
+# TODO:
+
+- [x] run `cargo fmt` to avoid downstream formatting noise in commit log
+- [x] Break code to highlight `stdsimd` issues
+- [x] If possible: get code running with portable implementations that do not use explicit SIMD
+- [x] Prune macros that are no longer necessary
+- [ ] Where useful, replace portable implementations with portable SIMD abstractions from the Faster crate (see all functions that currently have a *`_portable` suffix)
+- [ ] Update unit tests
+- [ ] Investigate `linking with cc failed: exit code: 1` occurring at build time (`cargo test --release`).
+- [ ] Prune unsafe code
+- [ ] Update dependencies
+- [ ] remove this TODO list
+- [ ] squash commits
+- [ ] optional: compare perf of old vs new implementations with the Criterion benchmarking package
+- [ ] remove Nightly warning in README
+
+
+
 <h1 align="center">
     <a href="http://atomashpolskiy.github.io/rustface/">Rustface</a>
 </h1>
@@ -146,7 +164,7 @@ cargo run --release --example image_demo model/seeta_fd_frontal_v1.0.bin <path-t
 - Andrei Tomashpolskiy \<nordmann89@gmail.com\>
   
   _Original developer and maintainer_
-    
+  
 - Ashley \<[github.com/expenses](https://github.com/expenses)\>
 
   _Contributed the switch from OpenCV to [Image](https://crates.io/crates/image)_

@@ -22,12 +22,6 @@ use math;
 
 use std::ptr;
 
-use stdsimd::simd::i32x4;
-use stdsimd::vendor::{
-    __m128i, _mm_add_epi32, _mm_and_si128, _mm_cmplt_epi32, _mm_loadu_si128, _mm_set1_epi32,
-    _mm_set_epi32, _mm_storeu_si128, _mm_xor_si128,
-};
-
 use rayon::prelude::*;
 
 pub struct SurfMlpFeatureMap {
@@ -200,17 +194,9 @@ impl SurfMlpFeatureMap {
     }
 
     fn mask_integral_channel(&mut self) {
-        #[cfg(all(any(target_arch = "x86_64", target_arch = "x86"), target_feature = "sse2"))]
-        {
-            unsafe { self.mask_integral_channel_sse2() }
-        }
-        #[cfg(not(all(any(target_arch = "x86_64", target_arch = "x86"), target_feature = "sse2")))]
-        {
-            self.mask_integral_channel_portable();
-        }
+        self.mask_integral_channel_portable();
     }
 
-    #[allow(unused)]
     fn mask_integral_channel_portable(&mut self) {
         let mut grad_x_ptr = self.grad_x.as_ptr();
         let mut grad_y_ptr = self.grad_y.as_ptr();
@@ -247,50 +233,6 @@ impl SurfMlpFeatureMap {
         }
     }
 
-    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-    #[target_feature = "+sse2"]
-    #[allow(unused)]
-    unsafe fn mask_integral_channel_sse2(&mut self) {
-        let mut grad_x_ptr = self.grad_x.as_ptr();
-        let mut grad_y_ptr = self.grad_y.as_ptr();
-
-        let mut dx: __m128i;
-        let mut dy: __m128i;
-        let mut dx_mask: __m128i;
-        let mut dy_mask: __m128i;
-        let zero = __m128i::from(_mm_set1_epi32(0));
-        let xor_bits = __m128i::from(_mm_set_epi32(0, 0, -1, -1));
-        let mut data: __m128i;
-        let mut result: __m128i;
-        let mut src = self.int_img.as_mut_ptr() as *mut __m128i;
-
-        for _ in 0..self.length {
-            dx = __m128i::from(_mm_set1_epi32(*grad_x_ptr));
-            dy = __m128i::from(_mm_set1_epi32(*grad_y_ptr));
-            dx_mask = _mm_xor_si128(
-                __m128i::from(_mm_cmplt_epi32(i32x4::from(dx), i32x4::from(zero))),
-                xor_bits,
-            );
-            dy_mask = _mm_xor_si128(
-                __m128i::from(_mm_cmplt_epi32(i32x4::from(dy), i32x4::from(zero))),
-                xor_bits,
-            );
-
-            data = _mm_loadu_si128(src);
-            result = _mm_and_si128(data, dy_mask);
-            _mm_storeu_si128(src, result);
-            src = src.offset(1);
-
-            data = _mm_loadu_si128(src);
-            result = _mm_and_si128(data, dx_mask);
-            _mm_storeu_si128(src, result);
-            src = src.offset(1);
-
-            grad_x_ptr = grad_x_ptr.offset(1);
-            grad_y_ptr = grad_y_ptr.offset(1);
-        }
-    }
-
     fn integral(&mut self) {
         let data = self.int_img.as_ptr();
         let len = (FeaturePool::K_NUM_INT_CHANNEL * self.width) as usize;
@@ -313,17 +255,9 @@ impl SurfMlpFeatureMap {
     }
 
     fn vector_cumulative_add(x: *const i32, len: usize, num_channel: u32) {
-        #[cfg(all(any(target_arch = "x86_64", target_arch = "x86"), target_feature = "sse2"))]
-        {
-            unsafe { SurfMlpFeatureMap::vector_cumulative_add_sse2(x, len, num_channel) }
-        }
-        #[cfg(not(all(any(target_arch = "x86_64", target_arch = "x86"), target_feature = "sse2")))]
-        {
-            SurfMlpFeatureMap::vector_cumulative_add_portable(x, len, num_channel);
-        }
+        SurfMlpFeatureMap::vector_cumulative_add_portable(x, len, num_channel);
     }
 
-    #[allow(unused)]
     fn vector_cumulative_add_portable(x: *const i32, len: usize, num_channel: u32) {
         unsafe {
             let num_channel = num_channel as usize;
@@ -333,39 +267,6 @@ impl SurfMlpFeatureMap {
                 let col2 = col1.offset(num_channel as isize);
                 math::vector_add(col1, col2, col2 as *mut i32, num_channel);
             }
-        }
-    }
-
-    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-    #[target_feature = "+sse2"]
-    #[allow(unused)]
-    unsafe fn vector_cumulative_add_sse2(x: *const i32, len: usize, num_channel: u32) {
-        let mut x1: __m128i;
-        let mut y1: __m128i;
-        let mut z1: __m128i;
-        let mut x2 = x as *const __m128i;
-        let mut y2 = x.offset(num_channel as isize) as *const __m128i;
-        let mut z2 = y2;
-
-        let len = len / num_channel as usize - 1;
-        for _ in 0..len {
-            // first 4 channels
-            x1 = _mm_loadu_si128(x2);
-            x2 = x2.offset(1);
-            y1 = _mm_loadu_si128(y2);
-            y2 = y2.offset(1);
-            z1 = __m128i::from(_mm_add_epi32(i32x4::from(x1), i32x4::from(y1)));
-            _mm_storeu_si128(z2 as *mut __m128i, z1);
-            z2 = y2;
-
-            // second 4 channels
-            x1 = _mm_loadu_si128(x2);
-            x2 = x2.offset(1);
-            y1 = _mm_loadu_si128(y2);
-            y2 = y2.offset(1);
-            z1 = __m128i::from(_mm_add_epi32(i32x4::from(x1), i32x4::from(y1)));
-            _mm_storeu_si128(z2 as *mut __m128i, z1);
-            z2 = y2;
         }
     }
 

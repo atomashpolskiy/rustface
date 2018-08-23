@@ -16,12 +16,9 @@
 // You should have received a copy of the BSD 2-Clause License along with the software.
 // If not, see < https://opensource.org/licenses/BSD-2-Clause>.
 
-#![feature(cfg_target_feature, target_feature)]
-
 extern crate byteorder;
 extern crate num;
 extern crate rayon;
-extern crate stdsimd;
 
 mod classifier;
 mod common;
