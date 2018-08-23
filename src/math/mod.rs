@@ -16,11 +16,12 @@
 // You should have received a copy of the BSD 2-Clause License along with the software.
 // If not, see < https://opensource.org/licenses/BSD-2-Clause>.
 
-use stdsimd::simd::{i32x4, i32x8, f32x4};
-use stdsimd::vendor::{__m128i, __m256i,
-                      _mm_setzero_ps, _mm_loadu_ps, _mm_storeu_ps, _mm_add_ps, _mm_mul_ps,
-                      _mm_add_epi32, _mm_sub_epi32, _mm_abs_epi32, _mm256_mullo_epi32,
-                      _mm_loadu_si128, _mm256_loadu_si256, _mm_storeu_si128, _mm256_storeu_si256};
+use stdsimd::simd::{f32x4, i32x4, i32x8};
+use stdsimd::vendor::{
+    __m128i, __m256i, _mm256_loadu_si256, _mm256_mullo_epi32, _mm256_storeu_si256, _mm_abs_epi32,
+    _mm_add_epi32, _mm_add_ps, _mm_loadu_ps, _mm_loadu_si128, _mm_mul_ps, _mm_setzero_ps,
+    _mm_storeu_ps, _mm_storeu_si128, _mm_sub_epi32,
+};
 
 pub fn copy_u8_to_i32(src: *const u8, dest: *mut i32, length: usize) {
     unsafe {
@@ -32,15 +33,15 @@ pub fn copy_u8_to_i32(src: *const u8, dest: *mut i32, length: usize) {
 
 pub fn square(src: *const i32, dest: *mut u32, length: usize) {
     #[cfg(all(any(target_arch = "x86_64", target_arch = "x86"), target_feature = "avx2"))]
-        {
-            unsafe {
-                square_avx2(src, dest, length);
-            }
+    {
+        unsafe {
+            square_avx2(src, dest, length);
         }
+    }
     #[cfg(not(all(any(target_arch = "x86_64", target_arch = "x86"), target_feature = "avx2")))]
-        {
-            square_portable(src, dest, length);
-        }
+    {
+        square_portable(src, dest, length);
+    }
 }
 
 #[allow(unused)]
@@ -67,7 +68,10 @@ unsafe fn square_avx2(src: *const i32, dest: *mut u32, length: usize) {
     // might use _mm_mullo_epi16 (SSE2) for better portability instead, because inputs are unlikely to exceed int16
     while i < (length as isize - 8) {
         x1 = _mm256_loadu_si256(x2);
-        _mm256_storeu_si256(z2, __m256i::from(_mm256_mullo_epi32(i32x8::from(x1), i32x8::from(x1))));
+        _mm256_storeu_si256(
+            z2,
+            __m256i::from(_mm256_mullo_epi32(i32x8::from(x1), i32x8::from(x1))),
+        );
 
         x2 = x2.offset(1);
         z2 = z2.offset(1);
@@ -82,15 +86,15 @@ unsafe fn square_avx2(src: *const i32, dest: *mut u32, length: usize) {
 
 pub fn abs(src: *const i32, dest: *mut i32, length: usize) {
     #[cfg(all(any(target_arch = "x86_64", target_arch = "x86"), target_feature = "ssse3"))]
-        {
-            unsafe {
-                abs_ssse3(src, dest, length);
-            }
+    {
+        unsafe {
+            abs_ssse3(src, dest, length);
         }
+    }
     #[cfg(not(all(any(target_arch = "x86_64", target_arch = "x86"), target_feature = "ssse3")))]
-        {
-            abs_portable(src, dest, length);
-        }
+    {
+        abs_portable(src, dest, length);
+    }
 }
 
 #[allow(unused)]
@@ -133,15 +137,15 @@ unsafe fn abs_ssse3(src: *const i32, dest: *mut i32, length: usize) {
 
 pub fn vector_add(left: *const i32, right: *const i32, dest: *mut i32, length: usize) {
     #[cfg(all(any(target_arch = "x86_64", target_arch = "x86"), target_feature = "sse2"))]
-        {
-            unsafe {
-                vector_add_sse2(left, right, dest, length);
-            }
+    {
+        unsafe {
+            vector_add_sse2(left, right, dest, length);
         }
+    }
     #[cfg(not(all(any(target_arch = "x86_64", target_arch = "x86"), target_feature = "sse2")))]
-        {
-            vector_add_portable(left, right, dest, length);
-        }
+    {
+        vector_add_portable(left, right, dest, length);
+    }
 }
 
 #[allow(unused)]
@@ -169,7 +173,10 @@ unsafe fn vector_add_sse2(left: *const i32, right: *const i32, dest: *mut i32, l
     while i < (length as isize - 4) {
         x1 = _mm_loadu_si128(x2);
         y1 = _mm_loadu_si128(y2);
-        _mm_storeu_si128(z2, __m128i::from(_mm_add_epi32(i32x4::from(x1), i32x4::from(y1))));
+        _mm_storeu_si128(
+            z2,
+            __m128i::from(_mm_add_epi32(i32x4::from(x1), i32x4::from(y1))),
+        );
 
         x2 = x2.offset(1);
         y2 = y2.offset(1);
@@ -184,15 +191,15 @@ unsafe fn vector_add_sse2(left: *const i32, right: *const i32, dest: *mut i32, l
 
 pub fn vector_sub(left: *const i32, right: *const i32, dest: *mut i32, length: usize) {
     #[cfg(all(any(target_arch = "x86_64", target_arch = "x86"), target_feature = "sse2"))]
-        {
-            unsafe {
-                vector_sub_sse2(left, right, dest, length);
-            }
+    {
+        unsafe {
+            vector_sub_sse2(left, right, dest, length);
         }
+    }
     #[cfg(not(all(any(target_arch = "x86_64", target_arch = "x86"), target_feature = "sse2")))]
-        {
-            vector_sub_portable(left, right, dest, length);
-        }
+    {
+        vector_sub_portable(left, right, dest, length);
+    }
 }
 
 #[allow(unused)]
@@ -220,7 +227,10 @@ unsafe fn vector_sub_sse2(left: *const i32, right: *const i32, dest: *mut i32, l
     while i < (length as isize - 4) {
         x1 = _mm_loadu_si128(x2);
         y1 = _mm_loadu_si128(y2);
-        _mm_storeu_si128(z2, __m128i::from(_mm_sub_epi32(i32x4::from(x1), i32x4::from(y1))));
+        _mm_storeu_si128(
+            z2,
+            __m128i::from(_mm_sub_epi32(i32x4::from(x1), i32x4::from(y1))),
+        );
 
         x2 = x2.offset(1);
         y2 = y2.offset(1);
@@ -235,15 +245,13 @@ unsafe fn vector_sub_sse2(left: *const i32, right: *const i32, dest: *mut i32, l
 
 pub fn vector_inner_product(left: *const f32, right: *const f32, length: usize) -> f32 {
     #[cfg(all(any(target_arch = "x86_64", target_arch = "x86"), target_feature = "sse"))]
-        {
-            unsafe {
-                vector_inner_product_sse(left, right, length)
-            }
-        }
+    {
+        unsafe { vector_inner_product_sse(left, right, length) }
+    }
     #[cfg(not(all(any(target_arch = "x86_64", target_arch = "x86"), target_feature = "sse")))]
-        {
-            vector_inner_product_portable(left, right, length)
-        }
+    {
+        vector_inner_product_portable(left, right, length)
+    }
 }
 
 #[allow(unused)]
@@ -368,9 +376,7 @@ mod tests {
     #[cfg(all(any(target_arch = "x86_64", target_arch = "x86"), target_feature = "sse"))]
     fn test_vector_inner_product_sse() {
         let vec = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0];
-        let result = unsafe {
-            vector_inner_product_sse(vec.as_ptr(), vec.as_ptr(), vec.len())
-        };
+        let result = unsafe { vector_inner_product_sse(vec.as_ptr(), vec.as_ptr(), vec.len()) };
         assert_eq!(91.0, result);
     }
 }

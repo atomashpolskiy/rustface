@@ -16,13 +16,13 @@
 // You should have received a copy of the BSD 2-Clause License along with the software.
 // If not, see < https://opensource.org/licenses/BSD-2-Clause>.
 
+use std::cell::RefCell;
 use std::fs::File;
 use std::io;
 use std::io::{Cursor, Read};
 use std::rc::Rc;
-use std::cell::RefCell;
 
-use byteorder::{ReadBytesExt, LittleEndian};
+use byteorder::{LittleEndian, ReadBytesExt};
 use classifier::{Classifier, ClassifierKind, LabBoostedClassifier, SurfMlpClassifier};
 use feat::{LabBoostedFeatureMap, SurfMlpFeatureMap};
 
@@ -67,9 +67,7 @@ impl Model {
 /// Load model from a file.
 pub fn load_model(path: &str) -> Result<Model, io::Error> {
     let mut buf = vec![];
-    File::open(path).map(|mut file|
-        file.read_to_end(&mut buf)
-    )??;
+    File::open(path).map(|mut file| file.read_to_end(&mut buf))??;
     read_model(buf)
 }
 
@@ -112,9 +110,11 @@ impl ModelReader {
 
                     match classifier_kind {
                         Some(ref classifier_kind) => {
-                            model.classifiers.push(self.create_classifier(classifier_kind)?);
-                        },
-                        None => panic!("Unexpected classifier kind id: {}", classifier_kind_id)
+                            model
+                                .classifiers
+                                .push(self.create_classifier(classifier_kind)?);
+                        }
+                        None => panic!("Unexpected classifier kind id: {}", classifier_kind_id),
                     };
                 }
 
@@ -135,22 +135,29 @@ impl ModelReader {
         Ok(model)
     }
 
-    fn create_classifier(&mut self, classifier_kind: &ClassifierKind) -> Result<Box<Classifier>, io::Error> {
+    fn create_classifier(
+        &mut self,
+        classifier_kind: &ClassifierKind,
+    ) -> Result<Box<Classifier>, io::Error> {
         match *classifier_kind {
             ClassifierKind::LabBoosted => {
-                let mut classifier = LabBoostedClassifier::new(Rc::clone(&self.lab_boosted_feature_map));
+                let mut classifier =
+                    LabBoostedClassifier::new(Rc::clone(&self.lab_boosted_feature_map));
                 self.read_lab_boosted_model(&mut classifier)?;
                 Ok(Box::new(classifier))
-            },
+            }
             ClassifierKind::SurfMlp => {
                 let mut classifier = SurfMlpClassifier::new(Rc::clone(&self.surf_mlp_feature_map));
                 self.read_surf_mlp_model(&mut classifier)?;
                 Ok(Box::new(classifier))
-            },
+            }
         }
     }
 
-    fn read_lab_boosted_model(&mut self, classifier: &mut LabBoostedClassifier) -> Result<(), io::Error> {
+    fn read_lab_boosted_model(
+        &mut self,
+        classifier: &mut LabBoostedClassifier,
+    ) -> Result<(), io::Error> {
         let num_base_classifier = self.read_i32()?;
         let num_bin = self.read_i32()?;
 
@@ -202,7 +209,12 @@ impl ModelReader {
             }
 
             if i == num_layer - 1 {
-                classifier.add_output_layer(input_dim as usize, output_dim as usize, weights, biases);
+                classifier.add_output_layer(
+                    input_dim as usize,
+                    output_dim as usize,
+                    weights,
+                    biases,
+                );
             } else {
                 classifier.add_layer(input_dim as usize, output_dim as usize, weights, biases);
             }
@@ -221,6 +233,3 @@ impl ModelReader {
         self.reader.read_f32::<LittleEndian>()
     }
 }
-
-
-

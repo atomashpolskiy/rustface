@@ -16,10 +16,10 @@
 // You should have received a copy of the BSD 2-Clause License along with the software.
 // If not, see < https://opensource.org/licenses/BSD-2-Clause>.
 
-extern crate rustface;
+extern crate cpuprofiler;
 extern crate image;
 extern crate imageproc;
-extern crate cpuprofiler;
+extern crate rustface;
 
 use std::env::Args;
 use std::time::{Duration, Instant};
@@ -71,7 +71,7 @@ fn main() {
     for face in faces {
         let bbox = face.bbox();
         let rect = Rect::at(bbox.x(), bbox.y()).of_size(bbox.width(), bbox.height());
-        
+
         draw_hollow_rect_mut(&mut rgb, rect, Rgb([255, 0, 0]));
     }
 
@@ -89,7 +89,11 @@ fn detect_faces(detector: &mut Detector, gray: &GrayImage) -> Vec<FaceInfo> {
     // PROFILER.lock().unwrap().start("./image_demo.profile").unwrap();
     let faces = detector.detect(&mut image);
     // PROFILER.lock().unwrap().stop().unwrap();
-    println!("Found {} faces in {} ms", faces.len(), get_millis(now.elapsed()));
+    println!(
+        "Found {} faces in {} ms",
+        faces.len(),
+        get_millis(now.elapsed())
+    );
     faces
 }
 
@@ -106,13 +110,16 @@ impl Options {
     fn parse(args: Args) -> Result<Self, String> {
         let args: Vec<String> = args.into_iter().collect();
         if args.len() != 3 {
-            return Err(format!("Usage: {} <model-path> <image-path>", args[0]))
+            return Err(format!("Usage: {} <model-path> <image-path>", args[0]));
         }
 
         let model_path = args[1].clone();
         let image_path = args[2].clone();
 
-        Ok(Options { image_path, model_path })
+        Ok(Options {
+            image_path,
+            model_path,
+        })
     }
 
     fn image_path(&self) -> &str {

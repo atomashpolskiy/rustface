@@ -16,8 +16,8 @@
 // You should have received a copy of the BSD 2-Clause License along with the software.
 // If not, see < https://opensource.org/licenses/BSD-2-Clause>.
 
-use std::rc::Rc;
 use std::cell::RefCell;
+use std::rc::Rc;
 
 use super::{Classifier, Score};
 use common::{ImageData, Rectangle};
@@ -48,9 +48,8 @@ impl LabBoostedClassifier {
     }
 
     pub fn add_base_classifier(&mut self, weights: Vec<f32>, thresh: f32) {
-        self.base_classifiers.push(
-            BaseClassifier { weights, thresh }
-        )
+        self.base_classifiers
+            .push(BaseClassifier { weights, thresh })
     }
 }
 
@@ -66,7 +65,10 @@ impl Classifier for LabBoostedClassifier {
         while positive && i < self.base_classifiers.len() {
             for _ in 0..K_FEAT_GROUP_SIZE {
                 let (offset_x, offset_y) = self.features[i];
-                let feature_val = self.feature_map.borrow().get_feature_val(offset_x, offset_y);
+                let feature_val = self
+                    .feature_map
+                    .borrow()
+                    .get_feature_val(offset_x, offset_y);
                 score += self.base_classifiers[i].weights[feature_val as usize];
                 i += 1;
             }
@@ -78,7 +80,9 @@ impl Classifier for LabBoostedClassifier {
     }
 
     fn compute(&mut self, image: &ImageData) {
-        self.feature_map.borrow_mut().compute(image.data(), image.width(), image.height());
+        self.feature_map
+            .borrow_mut()
+            .compute(image.data(), image.width(), image.height());
     }
 
     fn set_roi(&mut self, roi: Rectangle) {

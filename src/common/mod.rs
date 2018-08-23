@@ -20,7 +20,7 @@ mod image_pyramid;
 
 use std::mem;
 
-pub use self::image_pyramid::{ImageData, ImagePyramid, resize_image};
+pub use self::image_pyramid::{resize_image, ImageData, ImagePyramid};
 
 #[derive(Clone, Debug)]
 pub struct Rectangle {
@@ -32,7 +32,12 @@ pub struct Rectangle {
 
 impl Rectangle {
     pub fn new(x: i32, y: i32, width: u32, height: u32) -> Self {
-        Rectangle { x, y, width, height }
+        Rectangle {
+            x,
+            y,
+            width,
+            height,
+        }
     }
 
     pub fn x(&self) -> i32 {
@@ -111,14 +116,18 @@ impl FaceInfo {
     }
 }
 
-pub struct Seq<T, G> where G: Fn(&T) -> T + Sized {
+pub struct Seq<T, G>
+where
+    G: Fn(&T) -> T + Sized,
+{
     generator: G,
     next: T,
 }
 
 impl<T, G> Seq<T, G>
-    where G: Fn(&T) -> T + Sized {
-
+where
+    G: Fn(&T) -> T + Sized,
+{
     pub fn new(first_element: T, generator: G) -> Self {
         Seq {
             generator,
@@ -128,8 +137,9 @@ impl<T, G> Seq<T, G>
 }
 
 impl<T, G> Iterator for Seq<T, G>
-    where G: Fn(&T) -> T + Sized {
-
+where
+    G: Fn(&T) -> T + Sized,
+{
     type Item = T;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -152,6 +162,9 @@ mod tests {
     #[test]
     pub fn test_seq_take_while() {
         let seq = Seq::new(0, |x| x + 1);
-        assert_eq!(vec![0, 1, 2, 3, 4], seq.take_while(|x| *x < 5).collect::<Vec<i32>>());
+        assert_eq!(
+            vec![0, 1, 2, 3, 4],
+            seq.take_while(|x| *x < 5).collect::<Vec<i32>>()
+        );
     }
 }

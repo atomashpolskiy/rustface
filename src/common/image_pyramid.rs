@@ -16,8 +16,8 @@
 // You should have received a copy of the BSD 2-Clause License along with the software.
 // If not, see < https://opensource.org/licenses/BSD-2-Clause>.
 
-use std::ptr;
 use std::cmp;
+use std::ptr;
 
 #[derive(Debug)]
 pub struct ImageData {
@@ -79,7 +79,7 @@ pub struct ImagePyramid {
 
 impl ImagePyramid {
     pub fn new() -> Self {
-        let img_buf_width: u32 =  2;
+        let img_buf_width: u32 = 2;
         let img_buf_height: u32 = 2;
         let img_buf_scaled_width: u32 = 2;
         let img_buf_scaled_height: u32 = 2;
@@ -96,7 +96,9 @@ impl ImagePyramid {
             img_buf: Vec::with_capacity((img_buf_width * img_buf_height) as usize),
             img_buf_width,
             img_buf_height,
-            img_buf_scaled: Vec::with_capacity((img_buf_scaled_width * img_buf_scaled_height) as usize),
+            img_buf_scaled: Vec::with_capacity(
+                (img_buf_scaled_width * img_buf_scaled_height) as usize,
+            ),
             img_buf_scaled_width,
             img_buf_scaled_height,
         }
@@ -134,7 +136,11 @@ impl ImagePyramid {
         self.height1x = height;
 
         unsafe {
-            ptr::copy_nonoverlapping(img_data, self.img_buf.as_mut_ptr(), (width * height) as usize);
+            ptr::copy_nonoverlapping(
+                img_data,
+                self.img_buf.as_mut_ptr(),
+                (width * height) as usize,
+            );
         }
 
         self.scale_factor = self.max_scale;
@@ -166,8 +172,17 @@ impl ImagePyramid {
         self.height_scaled = (self.height1x as f32 * self.scale_factor) as u32;
 
         let src = ImageData::new(self.img_buf.as_ptr(), self.width1x, self.height1x);
-        resize_image(&src, self.img_buf_scaled.as_mut_ptr(), self.width_scaled, self.height_scaled);
-        let img_scaled = Some(ImageData::new(self.img_buf_scaled.as_ptr(), self.width_scaled, self.height_scaled));
+        resize_image(
+            &src,
+            self.img_buf_scaled.as_mut_ptr(),
+            self.width_scaled,
+            self.height_scaled,
+        );
+        let img_scaled = Some(ImageData::new(
+            self.img_buf_scaled.as_ptr(),
+            self.width_scaled,
+            self.height_scaled,
+        ));
         self.scale_factor *= self.scale_step;
 
         img_scaled
@@ -200,10 +215,11 @@ pub fn resize_image(src: &ImageData, dest: *mut u8, width: u32, height: u32) {
                 let d1 = f64::from(*src_data.offset((n_y_s * src.width() + n_x_s) as isize));
                 let d2 = f64::from(*src_data.offset((n_y_s * src.width() + n_x_s + 1) as isize));
                 let d3 = f64::from(*src_data.offset(((n_y_s + 1) * src.width() + n_x_s) as isize));
-                let d4 = f64::from(*src_data.offset(((n_y_s + 1) * src.width() + n_x_s + 1) as isize));
+                let d4 =
+                    f64::from(*src_data.offset(((n_y_s + 1) * src.width() + n_x_s + 1) as isize));
 
-                let dest_val = (1.0 - lf_weight_y) * ((1.0 - lf_weight_x) * d1 + lf_weight_x * d2) +
-                    lf_weight_y * ((1.0 - lf_weight_x) * d3 + lf_weight_x * d4);
+                let dest_val = (1.0 - lf_weight_y) * ((1.0 - lf_weight_x) * d1 + lf_weight_x * d2)
+                    + lf_weight_y * ((1.0 - lf_weight_x) * d3 + lf_weight_x * d4);
 
                 *dest.offset((y * width + x) as isize) = dest_val as u8;
             }

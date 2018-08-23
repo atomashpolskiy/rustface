@@ -16,13 +16,13 @@
 // You should have received a copy of the BSD 2-Clause License along with the software.
 // If not, see < https://opensource.org/licenses/BSD-2-Clause>.
 
+use num;
 use num::integer::Integer;
 use num::traits::WrappingAdd;
-use num;
 
-use math;
 use common::Rectangle;
 use feat::FeatureMap;
+use math;
 
 pub struct LabBoostedFeatureMap {
     roi: Option<Rectangle>,
@@ -41,7 +41,10 @@ pub struct LabBoostedFeatureMap {
 impl FeatureMap for LabBoostedFeatureMap {
     fn compute(&mut self, input: *const u8, width: u32, height: u32) {
         if width == 0 || height == 0 {
-            panic!(format!("Illegal arguments: width ({}), height ({})", width, height));
+            panic!(format!(
+                "Illegal arguments: width ({}), height ({})",
+                width, height
+            ));
         }
 
         self.reshape(width, height);
@@ -105,24 +108,41 @@ impl LabBoostedFeatureMap {
             (0, _) => {
                 let top_right = (roi_y - 1) * self_width + roi_width - 1;
                 let bottom_right = top_right + roi_height * self_width;
-                mean = f64::from(self.int_img[bottom_right as usize] - self.int_img[top_right as usize]) / area;
-                m2 = f64::from(self.square_int_img[bottom_right as usize] - self.square_int_img[top_right as usize]) / area;
+                mean = f64::from(
+                    self.int_img[bottom_right as usize] - self.int_img[top_right as usize],
+                ) / area;
+                m2 = f64::from(
+                    self.square_int_img[bottom_right as usize]
+                        - self.square_int_img[top_right as usize],
+                ) / area;
             }
             (_, 0) => {
                 let bottom_left = (roi_height - 1) * self_width + roi_x - 1;
                 let bottom_right = bottom_left + roi_width;
-                mean = f64::from(self.int_img[bottom_right as usize] - self.int_img[bottom_left as usize]) / area;
-                m2 = f64::from(self.square_int_img[bottom_right as usize] - self.square_int_img[bottom_left as usize]) / area;
+                mean = f64::from(
+                    self.int_img[bottom_right as usize] - self.int_img[bottom_left as usize],
+                ) / area;
+                m2 = f64::from(
+                    self.square_int_img[bottom_right as usize]
+                        - self.square_int_img[bottom_left as usize],
+                ) / area;
             }
             (_, _) => {
                 let top_left = (roi_y - 1) * self_width + roi_x - 1;
                 let top_right = top_left + roi_width;
                 let bottom_left = top_left + roi_height * self_width;
                 let bottom_right = bottom_left + roi_width;
-                mean = f64::from(self.int_img[bottom_right as usize] - self.int_img[bottom_left as usize] +
-                    self.int_img[top_left as usize] - self.int_img[top_right as usize]) / area;
-                m2 = f64::from(self.square_int_img[bottom_right as usize].wrapping_sub(self.square_int_img[bottom_left as usize])
-                    .wrapping_add(self.square_int_img[top_left as usize]).wrapping_sub(self.square_int_img[top_right as usize])) / area;
+                mean = f64::from(
+                    self.int_img[bottom_right as usize] - self.int_img[bottom_left as usize]
+                        + self.int_img[top_left as usize]
+                        - self.int_img[top_right as usize],
+                ) / area;
+                m2 = f64::from(
+                    self.square_int_img[bottom_right as usize]
+                        .wrapping_sub(self.square_int_img[bottom_left as usize])
+                        .wrapping_add(self.square_int_img[top_left as usize])
+                        .wrapping_sub(self.square_int_img[top_right as usize]),
+                ) / area;
             }
         }
 
@@ -143,14 +163,30 @@ impl LabBoostedFeatureMap {
     fn compute_integral_images(&mut self, input: *const u8) {
         unsafe {
             math::copy_u8_to_i32(input, self.int_img.as_mut_ptr(), self.length);
-            math::square(self.int_img.as_ptr(), self.square_int_img.as_mut_ptr(), self.length);
+            math::square(
+                self.int_img.as_ptr(),
+                self.square_int_img.as_mut_ptr(),
+                self.length,
+            );
 
-            LabBoostedFeatureMap::compute_integral(self.int_img.as_mut_ptr(), self.width, self.height);
-            LabBoostedFeatureMap::compute_integral(self.square_int_img.as_mut_ptr(), self.width, self.height);
+            LabBoostedFeatureMap::compute_integral(
+                self.int_img.as_mut_ptr(),
+                self.width,
+                self.height,
+            );
+            LabBoostedFeatureMap::compute_integral(
+                self.square_int_img.as_mut_ptr(),
+                self.width,
+                self.height,
+            );
         }
     }
 
-    unsafe fn compute_integral<T: Integer + WrappingAdd + Copy>(data: *mut T, width: u32, height: u32) {
+    unsafe fn compute_integral<T: Integer + WrappingAdd + Copy>(
+        data: *mut T,
+        width: u32,
+        height: u32,
+    ) {
         let mut src = data;
         let mut dest = data;
         let mut dest_previous_row = dest;
@@ -188,12 +224,15 @@ impl LabBoostedFeatureMap {
         let rect_sum_ptr = self.rect_sum.as_mut_ptr();
 
         unsafe {
-            *rect_sum_ptr = *(int_img_ptr.offset(((self.rect_height - 1) * self.width + self.rect_width - 1) as isize));
+            *rect_sum_ptr = *(int_img_ptr
+                .offset(((self.rect_height - 1) * self.width + self.rect_width - 1) as isize));
             math::vector_sub(
-                int_img_ptr.offset(((self.rect_height - 1) * self.width + self.rect_width) as isize),
+                int_img_ptr
+                    .offset(((self.rect_height - 1) * self.width + self.rect_width) as isize),
                 int_img_ptr.offset(((self.rect_height - 1) * self.width) as isize),
                 rect_sum_ptr.offset(1),
-                width);
+                width,
+            );
 
             for i in 1..(height + 1) {
                 let top_left = int_img_ptr.offset(((i - 1) * self.width) as isize);
@@ -225,7 +264,8 @@ impl LabBoostedFeatureMap {
                     let dest = feat_map_ptr.offset((r * self.width + c) as isize);
                     *dest = 0;
 
-                    let white_rect_sum = self.rect_sum[((r + self.rect_height) * self.width + c + self.rect_width) as usize];
+                    let white_rect_sum = self.rect_sum
+                        [((r + self.rect_height) * self.width + c + self.rect_width) as usize];
 
                     let mut black_rect_idx = r * self.width + c;
                     if white_rect_sum >= self.rect_sum[black_rect_idx as usize] {
