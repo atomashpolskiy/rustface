@@ -206,8 +206,8 @@ pub fn resize_image(src: &ImageData, dest: *mut u8, width: u32, height: u32) {
                 let lf_x_s = lf_x_scl * f64::from(x);
                 let lf_y_s = lf_y_scl * f64::from(y);
 
-                let n_x_s = cmp::min(lf_x_s as u32, (src.width() - 2));
-                let n_y_s = cmp::min(lf_y_s as u32, (src.height() - 2));
+                let n_x_s = cmp::min(lf_x_s as u32, src.width() - 2);
+                let n_y_s = cmp::min(lf_y_s as u32, src.height() - 2);
 
                 let lf_weight_x = lf_x_s - f64::from(n_x_s);
                 let lf_weight_y = lf_y_s - f64::from(n_y_s);

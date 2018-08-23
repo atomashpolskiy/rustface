@@ -478,11 +478,11 @@ fn non_maximum_suppression(
             let y = cmp::max(y1, bboxes[i].bbox().y());
             let w = cmp::min(
                 x2,
-                (bboxes[i].bbox().x() + bboxes[i].bbox().width() as i32 - 1),
+                bboxes[i].bbox().x() + bboxes[i].bbox().width() as i32 - 1,
             ) - x + 1;
             let h = cmp::min(
                 y2,
-                (bboxes[i].bbox().y() + bboxes[i].bbox().height() as i32 - 1),
+                bboxes[i].bbox().y() + bboxes[i].bbox().height() as i32 - 1,
             ) - y + 1;
 
             if w <= 0 || h <= 0 {
