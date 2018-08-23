@@ -6,7 +6,7 @@
 - [x] Prune macros that are no longer necessary
 - [ ] Where useful, replace portable implementations with portable SIMD abstractions from the Faster crate (see all functions that currently have a *`_portable` suffix)
 - [ ] Update unit tests
-- [ ] Investigate `linking with cc failed: exit code: 1` occurring at build time (`cargo test --release`).
+- [x] ~~Investigate `linking with cc failed: exit code: 1` occurring at build time (`cargo test --release`).~~ Cause: `cpuprofiler` crate generates (mac-specific?) link time errors.
 - [ ] Prune unsafe code
 - [ ] Update dependencies
 - [ ] remove this TODO list

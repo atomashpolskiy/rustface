@@ -16,7 +16,6 @@
 // You should have received a copy of the BSD 2-Clause License along with the software.
 // If not, see < https://opensource.org/licenses/BSD-2-Clause>.
 
-extern crate cpuprofiler;
 extern crate image;
 extern crate imageproc;
 extern crate rustface;
@@ -27,9 +26,6 @@ use std::time::{Duration, Instant};
 use image::{DynamicImage, GrayImage, Rgb};
 use imageproc::drawing::draw_hollow_rect_mut;
 use imageproc::rect::Rect;
-
-#[allow(unused_imports)]
-use cpuprofiler::PROFILER;
 
 use rustface::{Detector, FaceInfo, ImageData};
 
@@ -85,10 +81,7 @@ fn detect_faces(detector: &mut Detector, gray: &GrayImage) -> Vec<FaceInfo> {
     let (width, height) = gray.dimensions();
     let mut image = ImageData::new(gray.as_ptr(), width, height);
     let now = Instant::now();
-    // uncomment to profile
-    // PROFILER.lock().unwrap().start("./image_demo.profile").unwrap();
     let faces = detector.detect(&mut image);
-    // PROFILER.lock().unwrap().stop().unwrap();
     println!(
         "Found {} faces in {} ms",
         faces.len(),
