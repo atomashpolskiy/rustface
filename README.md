@@ -4,15 +4,55 @@
 - [x] Break code to highlight `stdsimd` issues
 - [x] If possible: get code running with portable implementations that do not use explicit SIMD
 - [x] Prune macros that are no longer necessary
-- [ ] Where useful, replace portable implementations with portable SIMD abstractions from the Faster crate (see all functions that currently have a *`_portable` suffix)
-- [ ] Update unit tests
 - [x] ~~Investigate `linking with cc failed: exit code: 1` occurring at build time (`cargo test --release`).~~ Cause: `cpuprofiler` crate generates (mac-specific?) link time errors.
-- [ ] Prune unsafe code
+- [x] Add benchmark for detection on the `scientists.jpg` test image.
+- [ ] Add to the readme:
+  - [ ] how to run the benchmark: `RAYON_NUM_THREADS=1 cargo test --release --bench benchmarks` 
+  - [ ] how to compare against a saved baseline
+  - [ ] how to save a new baseline `RAYON_NUM_THREADS=1 cargo test --release --bench benchmarks -- --save-baseline newbaseline`
 - [ ] Update dependencies
-- [ ] remove this TODO list
-- [ ] squash commits
-- [ ] optional: compare perf of old vs new implementations with the Criterion benchmarking package
+- [ ] squash messy commits
 - [ ] remove Nightly warning in README
+- [ ] remove this TODO list
+
+
+
+# Benchmarking
+
+The question: is explicit SIMD still worth it considering compiler improvements since rustc 1.25 nightly?
+
+How to compare portable code against old master that used the explicit SIMD of rustc 1.25 nightly:
+
+```bash
+# Install the Nightly toolchain that produced the last functional built in Travis
+rustup toolchain install nightly-2018-01-15
+
+# Activate that toolchain
+rustup default nightly-2018-01-15
+cargo clean
+
+# Compile master using old nightly rustc 1.25
+# hotfix: remove cpuprofiler from example code, but otherwise same as master
+git checkout hotfix_cpuprofiler
+cargo build --release --example image_demo
+cp ./target/release/examples/image_demo ./image_demo_master_nightly_1.25.0
+
+# Compile my branch that uses only the portable functions using stable rustc 1.28
+rustup default stable
+cargo clean
+git checkout only_stable_features
+cargo build --release --example image_demo
+cp ./target/release/examples/image_demo ./image_demo_stable_1.28.0
+
+# run benchmarks 
+hyperfine \
+'RAYON_NUM_THREADS={num_threads} ./image_demo_master_nightly_1.25.0 model/seeta_fd_frontal_v1.0.bin assets/test/scientists.jpg' \
+'RAYON_NUM_THREADS={num_threads} ./image_demo_stable_1.28.0 model/seeta_fd_frontal_v1.0.bin assets/test/scientists.jpg' \
+--parameter-scan num_threads 1 3 \
+--export-markdown comparison.md \
+--min-runs 20
+```
+
 
 
 

@@ -25,10 +25,6 @@ pub fn copy_u8_to_i32(src: *const u8, dest: *mut i32, length: usize) {
 }
 
 pub fn square(src: *const i32, dest: *mut u32, length: usize) {
-    square_portable(src, dest, length);
-}
-
-fn square_portable(src: *const i32, dest: *mut u32, length: usize) {
     unsafe {
         for i in 0..length as isize {
             let value = *src.offset(i);
@@ -38,10 +34,6 @@ fn square_portable(src: *const i32, dest: *mut u32, length: usize) {
 }
 
 pub fn abs(src: *const i32, dest: *mut i32, length: usize) {
-    abs_portable(src, dest, length);
-}
-
-fn abs_portable(src: *const i32, dest: *mut i32, length: usize) {
     unsafe {
         for i in 0..length as isize {
             let value = *src.offset(i);
@@ -51,10 +43,6 @@ fn abs_portable(src: *const i32, dest: *mut i32, length: usize) {
 }
 
 pub fn vector_add(left: *const i32, right: *const i32, dest: *mut i32, length: usize) {
-    vector_add_portable(left, right, dest, length);
-}
-
-fn vector_add_portable(left: *const i32, right: *const i32, dest: *mut i32, length: usize) {
     unsafe {
         for i in 0..length as isize {
             *dest.offset(i) = *left.offset(i) + *right.offset(i);
@@ -63,10 +51,6 @@ fn vector_add_portable(left: *const i32, right: *const i32, dest: *mut i32, leng
 }
 
 pub fn vector_sub(left: *const i32, right: *const i32, dest: *mut i32, length: usize) {
-    vector_sub_portable(left, right, dest, length);
-}
-
-fn vector_sub_portable(left: *const i32, right: *const i32, dest: *mut i32, length: usize) {
     unsafe {
         for i in 0..length as isize {
             *dest.offset(i) = *left.offset(i) - *right.offset(i);
@@ -75,10 +59,6 @@ fn vector_sub_portable(left: *const i32, right: *const i32, dest: *mut i32, leng
 }
 
 pub fn vector_inner_product(left: *const f32, right: *const f32, length: usize) -> f32 {
-    vector_inner_product_portable(left, right, length)
-}
-
-fn vector_inner_product_portable(left: *const f32, right: *const f32, length: usize) -> f32 {
     let mut product = 0.0;
     unsafe {
         for i in 0..length as isize {
@@ -94,37 +74,37 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_square_portable() {
+    fn test_square() {
         let mut vec = vec![1, 2, 3];
-        square_portable(vec.as_ptr(), vec.as_mut_ptr() as *mut u32, vec.len());
+        square(vec.as_ptr(), vec.as_mut_ptr() as *mut u32, vec.len());
         assert_eq!(vec![1, 4, 9], vec);
     }
 
     #[test]
-    fn test_abs_portable() {
+    fn test_abs() {
         let mut vec = vec![-1, 2, -3];
-        abs_portable(vec.as_ptr(), vec.as_mut_ptr(), vec.len());
+        abs(vec.as_ptr(), vec.as_mut_ptr(), vec.len());
         assert_eq!(vec![1, 2, 3], vec);
     }
 
     #[test]
-    fn test_vector_add_portable() {
+    fn test_vector_add() {
         let mut vec = vec![1, 2, 3];
-        vector_add_portable(vec.as_ptr(), vec.as_ptr(), vec.as_mut_ptr(), vec.len());
+        vector_add(vec.as_ptr(), vec.as_ptr(), vec.as_mut_ptr(), vec.len());
         assert_eq!(vec![2, 4, 6], vec);
     }
 
     #[test]
-    fn test_vector_sub_portable() {
+    fn test_vector_sub() {
         let mut vec = vec![1, 2, 3];
-        vector_sub_portable(vec.as_ptr(), vec.as_ptr(), vec.as_mut_ptr(), vec.len());
+        vector_sub(vec.as_ptr(), vec.as_ptr(), vec.as_mut_ptr(), vec.len());
         assert_eq!(vec![0, 0, 0], vec);
     }
 
     #[test]
-    fn test_vector_inner_product_portable() {
+    fn test_vector_inner_product() {
         let vec = vec![1.0, 2.0, 3.0];
-        let result = vector_inner_product_portable(vec.as_ptr(), vec.as_ptr(), vec.len());
+        let result = vector_inner_product(vec.as_ptr(), vec.as_ptr(), vec.len());
         assert_eq!(14.0, result);
     }
 }

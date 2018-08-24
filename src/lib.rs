@@ -24,7 +24,7 @@ mod classifier;
 mod common;
 mod detector;
 mod feat;
-mod math;
+pub mod math;
 pub mod model;
 
 pub use common::FaceInfo;
