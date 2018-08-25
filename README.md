@@ -1,3 +1,4 @@
+
 <h1 align="center">
     <a href="http://atomashpolskiy.github.io/rustface/">Rustface</a>
 </h1>
@@ -44,31 +45,20 @@ SeetaFace Detection is an implementation of Funnel-Structured cascade, which is 
 
 ## Performance
 
-Crude manual benchmarking shows that the Rust version is _slightly faster_ than the original C++ version. Here are some numbers for a [medium-sized image with 29 persons](https://github.com/atomashpolskiy/rustface/tree/master/assets/test/scientists.jpg), which you may see above in this readme:
+We want the current master branch to be covered by stability guarantees, so we have moved the code that relies on unstable explicit SIMD intrinsics to the `nightly` branch. 
+
+Benchmarks for the `master` branch are coming soon.
+
+### Using nightly Rust
+
+The `nightly` branch contains a slightly (~20%) faster version of rustface. This speedup is made possible by using explicit SIMD intrinsics.  If you want to use this branch, you need an older nightly toolchain.
 
 ```
-Image size: 1666x1136
-Number of faces: 29
-
-CPU: 2,3 GHz Intel Core i7
-Single-threaded (OpenMP disabled, Rayon threads set to 1)
-SIMD enabled
-LTO disabled
-
-* Original *
-samples (ms): 893,893,891,883,884,883,890,908,893,879
-mean (ms): 889.7
-stddev (ms): 7.785
-
-* Rustface *
-samples (ms): 867,861,851,850,856,847,855,851,850,861
-mean (ms): 854.9
-stddev (ms): 6.024
+rustup toolchain install nightly-2018-01-15
+rustup default nightly-2018-01-15
 ```
 
-In this particular test the Rust version has been **4% faster on average** than its C++ counterpart.
-
-When using multiple threads and enabling LTO (link-time optimization), Rust performance is a tad better (I observe a **8% boost**):
+Regarding the performance of the `nightly` branch: crude manual benchmarking showed that this nightly Rust version of SeetaFace is _slightly faster_ than the original C++ version. In this particular test the Rust version has been **4% faster on average** than its C++ counterpart. When using multiple threads and enabling LTO (link-time optimization), Rust performance is a tad better (I observe a **8% boost**):
 
 ```
 Multi-threaded (Rayon threads set to 2)
@@ -79,6 +69,8 @@ samples (ms): 787,789,795,795,787,785,791,799,795,788
 mean (ms): 791.1
 stddev (ms): 4.39
 ```
+
+
 
 ## Usage example
 
@@ -106,12 +98,6 @@ fn main() {
 
 The project is a library crate and also contains a runnable example for demonstration purposes.
 
-Due to usage of [experimental stdsimd crate](https://github.com/rust-lang-nursery/stdsimd) for SIMD support, the project relies on the nightly Rust toolchain, so you'll need to install it and set it as the default:
-
-```
-rustup default nightly
-```
-
 Then just use the standard Cargo `build` command:
 
 ```
@@ -138,6 +124,7 @@ cargo run --release --example image_demo model/seeta_fd_frontal_v1.0.bin <path-t
 
 ## TODO
 
+* Use stable SIMD intrinsics when available
 * Parallelize remaining CPU intensive loops
 * Tests (it would make sense to start with an integration test for `Detector::detect`, based on the results retrieved from the original library)
 
@@ -146,7 +133,7 @@ cargo run --release --example image_demo model/seeta_fd_frontal_v1.0.bin <path-t
 - Andrei Tomashpolskiy \<nordmann89@gmail.com\>
   
   _Original developer and maintainer_
-    
+  
 - Ashley \<[github.com/expenses](https://github.com/expenses)\>
 
   _Contributed the switch from OpenCV to [Image](https://crates.io/crates/image)_

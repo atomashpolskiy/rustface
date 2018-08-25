@@ -22,10 +22,6 @@ use math;
 
 use std::ptr;
 
-use stdsimd::simd::{i32x4};
-use stdsimd::vendor::{__m128i, _mm_set1_epi32, _mm_set_epi32, _mm_xor_si128, _mm_cmplt_epi32, _mm_and_si128,
-                      _mm_add_epi32, _mm_loadu_si128, _mm_storeu_si128};
-
 use rayon::prelude::*;
 
 pub struct SurfMlpFeatureMap {
@@ -45,7 +41,10 @@ pub struct SurfMlpFeatureMap {
 impl FeatureMap for SurfMlpFeatureMap {
     fn compute(&mut self, input: *const u8, width: u32, height: u32) {
         if width == 0 || height == 0 {
-            panic!(format!("Illegal arguments: width ({}), height ({})", width, height));
+            panic!(format!(
+                "Illegal arguments: width ({}), height ({})",
+                width, height
+            ));
         }
 
         self.reshape(width, height);
@@ -103,7 +102,8 @@ impl SurfMlpFeatureMap {
 
         self.grad_x.resize(self.length, 0);
         self.grad_y.resize(self.length, 0);
-        self.int_img.resize(self.length * FeaturePool::K_NUM_INT_CHANNEL as usize, 0);
+        self.int_img
+            .resize(self.length * FeaturePool::K_NUM_INT_CHANNEL as usize, 0);
         self.img_buf.resize(self.length, 0);
     }
 
@@ -144,8 +144,10 @@ impl SurfMlpFeatureMap {
             math::vector_add(dy, dy, dy, len);
 
             let step = self.width as usize;
-            self.img_buf.par_chunks(step)
-                .zip(self.grad_y[step..].par_chunks_mut(step)).for_each(|(inputs, outputs)| {
+            self.img_buf
+                .par_chunks(step)
+                .zip(self.grad_y[step..].par_chunks_mut(step))
+                .for_each(|(inputs, outputs)| {
                     let src = inputs.as_ptr();
                     let dest = outputs.as_mut_ptr();
                     math::vector_sub(src.offset((step << 1) as isize), src, dest, len);
@@ -153,7 +155,12 @@ impl SurfMlpFeatureMap {
 
             let offset = ((self.height - 1) * self.width) as isize;
             dy = dy.offset(offset);
-            math::vector_sub(input.offset(offset), input.offset(offset - self.width as isize), dy, len);
+            math::vector_sub(
+                input.offset(offset),
+                input.offset(offset - self.width as isize),
+                dy,
+                len,
+            );
             math::vector_add(dy, dy, dy, len);
         }
     }
@@ -187,19 +194,9 @@ impl SurfMlpFeatureMap {
     }
 
     fn mask_integral_channel(&mut self) {
-        #[cfg(all(any(target_arch = "x86_64", target_arch = "x86"), target_feature = "sse2"))]
-            {
-                unsafe {
-                    self.mask_integral_channel_sse2()
-                }
-            }
-        #[cfg(not(all(any(target_arch = "x86_64", target_arch = "x86"), target_feature = "sse2")))]
-            {
-                self.mask_integral_channel_portable();
-            }
+        self.mask_integral_channel_portable();
     }
 
-    #[allow(unused)]
     fn mask_integral_channel_portable(&mut self) {
         let mut grad_x_ptr = self.grad_x.as_ptr();
         let mut grad_y_ptr = self.grad_y.as_ptr();
@@ -236,44 +233,6 @@ impl SurfMlpFeatureMap {
         }
     }
 
-    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-    #[target_feature = "+sse2"]
-    #[allow(unused)]
-    unsafe fn mask_integral_channel_sse2(&mut self) {
-        let mut grad_x_ptr = self.grad_x.as_ptr();
-        let mut grad_y_ptr = self.grad_y.as_ptr();
-
-        let mut dx: __m128i;
-        let mut dy: __m128i;
-        let mut dx_mask: __m128i;
-        let mut dy_mask: __m128i;
-        let zero = __m128i::from(_mm_set1_epi32(0));
-        let xor_bits = __m128i::from(_mm_set_epi32(0, 0, -1, -1));
-        let mut data: __m128i;
-        let mut result: __m128i;
-        let mut src = self.int_img.as_mut_ptr() as *mut __m128i;
-
-        for _ in 0..self.length {
-            dx = __m128i::from(_mm_set1_epi32(*grad_x_ptr));
-            dy = __m128i::from(_mm_set1_epi32(*grad_y_ptr));
-            dx_mask = _mm_xor_si128(__m128i::from(_mm_cmplt_epi32(i32x4::from(dx), i32x4::from(zero))), xor_bits);
-            dy_mask = _mm_xor_si128(__m128i::from(_mm_cmplt_epi32(i32x4::from(dy), i32x4::from(zero))), xor_bits);
-
-            data = _mm_loadu_si128(src);
-            result = _mm_and_si128(data, dy_mask);
-            _mm_storeu_si128(src, result);
-            src = src.offset(1);
-
-            data = _mm_loadu_si128(src);
-            result = _mm_and_si128(data, dx_mask);
-            _mm_storeu_si128(src, result);
-            src = src.offset(1);
-
-            grad_x_ptr = grad_x_ptr.offset(1);
-            grad_y_ptr = grad_y_ptr.offset(1);
-        }
-    }
-
     fn integral(&mut self) {
         let data = self.int_img.as_ptr();
         let len = (FeaturePool::K_NUM_INT_CHANNEL * self.width) as usize;
@@ -287,25 +246,18 @@ impl SurfMlpFeatureMap {
 
             for r in 0..self.height as isize {
                 SurfMlpFeatureMap::vector_cumulative_add(
-                    data.offset(r * len as isize), len, FeaturePool::K_NUM_INT_CHANNEL);
+                    data.offset(r * len as isize),
+                    len,
+                    FeaturePool::K_NUM_INT_CHANNEL,
+                );
             }
         }
     }
 
     fn vector_cumulative_add(x: *const i32, len: usize, num_channel: u32) {
-        #[cfg(all(any(target_arch = "x86_64", target_arch = "x86"), target_feature = "sse2"))]
-            {
-                unsafe {
-                    SurfMlpFeatureMap::vector_cumulative_add_sse2(x, len, num_channel)
-                }
-            }
-        #[cfg(not(all(any(target_arch = "x86_64", target_arch = "x86"), target_feature = "sse2")))]
-            {
-                SurfMlpFeatureMap::vector_cumulative_add_portable(x, len, num_channel);
-            }
+        SurfMlpFeatureMap::vector_cumulative_add_portable(x, len, num_channel);
     }
 
-    #[allow(unused)]
     fn vector_cumulative_add_portable(x: *const i32, len: usize, num_channel: u32) {
         unsafe {
             let num_channel = num_channel as usize;
@@ -318,45 +270,13 @@ impl SurfMlpFeatureMap {
         }
     }
 
-    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-    #[target_feature = "+sse2"]
-    #[allow(unused)]
-    unsafe fn vector_cumulative_add_sse2(x: *const i32, len: usize, num_channel: u32) {
-        let mut x1: __m128i;
-        let mut y1: __m128i;
-        let mut z1: __m128i;
-        let mut x2 = x as *const __m128i;
-        let mut y2 = x.offset(num_channel as isize) as *const __m128i;
-        let mut z2 = y2;
-
-        let len = len / num_channel as usize - 1;
-        for _ in 0..len {
-            // first 4 channels
-            x1 = _mm_loadu_si128(x2);
-            x2 = x2.offset(1);
-            y1 = _mm_loadu_si128(y2);
-            y2 = y2.offset(1);
-            z1 = __m128i::from(_mm_add_epi32(i32x4::from(x1), i32x4::from(y1)));
-            _mm_storeu_si128(z2 as *mut __m128i, z1);
-            z2 = y2;
-
-            // second 4 channels
-            x1 = _mm_loadu_si128(x2);
-            x2 = x2.offset(1);
-            y1 = _mm_loadu_si128(y2);
-            y2 = y2.offset(1);
-            z1 = __m128i::from(_mm_add_epi32(i32x4::from(x1), i32x4::from(y1)));
-            _mm_storeu_si128(z2 as *mut __m128i, z1);
-            z2 = y2;
-        }
-    }
-
     unsafe fn compute_feature_vector(&self, feature: &Feature, feature_vec: *mut i32) {
         let roi = self.roi.as_ref().unwrap();
         let init_cell_x = roi.x() + feature.patch.x();
         let init_cell_y = roi.y() + feature.patch.y();
         let k_num_int_channel = FeaturePool::K_NUM_INT_CHANNEL as isize;
-        let cell_width: isize = (feature.patch.width() / feature.num_cell_per_row) as isize * k_num_int_channel;
+        let cell_width: isize =
+            (feature.patch.width() / feature.num_cell_per_row) as isize * k_num_int_channel;
         let cell_height: isize = (feature.patch.height() / feature.num_cell_per_col) as isize;
         let row_width: isize = (self.width as isize) * k_num_int_channel;
 
@@ -389,9 +309,10 @@ impl SurfMlpFeatureMap {
                         feature_value = feature_value.offset(1);
                     }
                 }
-            },
+            }
             (_, 0) => {
-                offset = row_width * (cell_height - 1) + (init_cell_x - 1) as isize * k_num_int_channel;
+                offset =
+                    row_width * (cell_height - 1) + (init_cell_x - 1) as isize * k_num_int_channel;
                 for i in 0..k_num_int_channel as usize {
                     cell_bottom_left[i] = int_img_ptr.offset(offset);
                     offset += 1;
@@ -409,9 +330,10 @@ impl SurfMlpFeatureMap {
                         feature_value = feature_value.offset(1);
                     }
                 }
-            },
+            }
             (0, _) => {
-                let mut tmp_cell_top_right: Vec<*const i32> = vec![&val; k_num_int_channel as usize];
+                let mut tmp_cell_top_right: Vec<*const i32> =
+                    vec![&val; k_num_int_channel as usize];
 
                 offset = row_width * ((init_cell_y - 1) as isize) + cell_width - k_num_int_channel;
                 for i in 0..k_num_int_channel as usize {
@@ -429,25 +351,31 @@ impl SurfMlpFeatureMap {
                         cell_top_right[j] = cell_top_right[j].offset(cell_width);
                         cell_bottom_left[j] = cell_bottom_right[j];
                         cell_bottom_right[j] = cell_bottom_right[j].offset(cell_width);
-                        *feature_value = *cell_bottom_right[j] + *cell_top_left[j] - *cell_top_right[j] - *cell_bottom_left[j];
+                        *feature_value = *cell_bottom_right[j] + *cell_top_left[j]
+                            - *cell_top_right[j]
+                            - *cell_bottom_left[j];
                         feature_value = feature_value.offset(1);
                     }
                 }
 
                 cell_top_right[..k_num_int_channel as usize]
                     .clone_from_slice(&tmp_cell_top_right[..k_num_int_channel as usize]);
-            },
+            }
             (_, _) => {
-                let mut tmp_cell_top_right: Vec<*const i32> = vec![&val; k_num_int_channel as usize];
+                let mut tmp_cell_top_right: Vec<*const i32> =
+                    vec![&val; k_num_int_channel as usize];
 
-                offset = row_width * ((init_cell_y - 1) as isize) + (init_cell_x - 1) as isize * k_num_int_channel;
+                offset = row_width * ((init_cell_y - 1) as isize)
+                    + (init_cell_x - 1) as isize * k_num_int_channel;
                 for i in 0..k_num_int_channel as usize {
                     cell_top_left[i] = int_img_ptr.offset(offset);
                     offset += 1;
                     cell_top_right[i] = cell_top_left[i].offset(cell_width);
                     cell_bottom_left[i] = cell_top_left[i].offset(row_width * cell_height);
                     cell_bottom_right[i] = cell_bottom_left[i].offset(cell_width);
-                    *feature_value = *cell_bottom_right[i] + *cell_top_left[i] - *cell_top_right[i] - *cell_bottom_left[i];
+                    *feature_value = *cell_bottom_right[i] + *cell_top_left[i]
+                        - *cell_top_right[i]
+                        - *cell_bottom_left[i];
                     feature_value = feature_value.offset(1);
                     tmp_cell_top_right[i] = cell_bottom_right[i];
                 }
@@ -458,7 +386,9 @@ impl SurfMlpFeatureMap {
                         cell_top_right[j] = cell_top_right[j].offset(cell_width);
                         cell_bottom_left[j] = cell_bottom_right[j];
                         cell_bottom_right[j] = cell_bottom_right[j].offset(cell_width);
-                        *feature_value = *cell_bottom_right[j] + *cell_top_left[j] - *cell_top_right[j] - *cell_bottom_left[j];
+                        *feature_value = *cell_bottom_right[j] + *cell_top_left[j]
+                            - *cell_top_right[j]
+                            - *cell_bottom_left[j];
                         feature_value = feature_value.offset(1);
                     }
                 }
@@ -468,7 +398,8 @@ impl SurfMlpFeatureMap {
             }
         }
 
-        offset = cell_height * row_width - feature.patch.width() as isize * k_num_int_channel + cell_width;
+        offset = cell_height * row_width - feature.patch.width() as isize * k_num_int_channel
+            + cell_width;
         for _ in 1..feature.num_cell_per_row {
             if init_cell_x == 0 {
                 for j in 0..k_num_int_channel as usize {
@@ -481,7 +412,9 @@ impl SurfMlpFeatureMap {
                     cell_bottom_right[j] = cell_bottom_right[j].offset(offset);
                     cell_top_left[j] = cell_top_right[j].offset(-cell_width);
                     cell_bottom_left[j] = cell_bottom_right[j].offset(-cell_width);
-                    *feature_value = *cell_bottom_right[j] + *cell_top_left[j] - *cell_top_right[j] - *cell_bottom_left[j];
+                    *feature_value = *cell_bottom_right[j] + *cell_top_left[j]
+                        - *cell_top_right[j]
+                        - *cell_bottom_left[j];
                     feature_value = feature_value.offset(1);
                 }
             }
@@ -492,7 +425,9 @@ impl SurfMlpFeatureMap {
                     cell_top_right[k] = cell_top_right[k].offset(cell_width);
                     cell_bottom_left[k] = cell_bottom_right[k];
                     cell_bottom_right[k] = cell_bottom_right[k].offset(cell_width);
-                    *feature_value = *cell_bottom_right[k] + *cell_top_left[k] - *cell_bottom_left[k] - *cell_top_right[k];
+                    *feature_value = *cell_bottom_right[k] + *cell_top_left[k]
+                        - *cell_bottom_left[k]
+                        - *cell_top_right[k];
                     feature_value = feature_value.offset(1);
                 }
             }
@@ -512,7 +447,11 @@ impl SurfMlpFeatureMap {
             let feature_vec = self.feature_vectors[feature_id].as_ptr();
             let feature_vec_normalized = self.feature_vectors_normalized[feature_id].as_mut_ptr();
             let length = self.feature_vectors_normalized[feature_id].len();
-            SurfMlpFeatureMap::normalize_feature_vector(feature_vec, feature_vec_normalized, length);
+            SurfMlpFeatureMap::normalize_feature_vector(
+                feature_vec,
+                feature_vec_normalized,
+                length,
+            );
         }
 
         let feature_vec_normalized = self.feature_vectors_normalized[feature_id].as_ptr();
@@ -520,7 +459,11 @@ impl SurfMlpFeatureMap {
         ptr::copy_nonoverlapping(feature_vec_normalized, feature_vec, length);
     }
 
-    unsafe fn normalize_feature_vector(feature_vec: *const i32, feature_vec_normalized: *mut f32, length: usize) {
+    unsafe fn normalize_feature_vector(
+        feature_vec: *const i32,
+        feature_vec_normalized: *mut f32,
+        length: usize,
+    ) {
         let mut prod: f64 = 0.0;
 
         for i in 0..length as isize {
@@ -574,10 +517,19 @@ impl FeaturePool {
         }
     }
 
-    fn add_patch_format(&mut self, width: u32, height: u32, num_cell_per_row: u32, num_cell_per_col: u32) {
-        self.patch_formats.push(
-            PatchFormat { width, height, num_cell_per_row, num_cell_per_col }
-        );
+    fn add_patch_format(
+        &mut self,
+        width: u32,
+        height: u32,
+        num_cell_per_row: u32,
+        num_cell_per_col: u32,
+    ) {
+        self.patch_formats.push(PatchFormat {
+            width,
+            height,
+            num_cell_per_row,
+            num_cell_per_col,
+        });
     }
 
     fn create(&mut self) {
@@ -586,16 +538,25 @@ impl FeaturePool {
         if self.sample_height - self.patch_min_height <= self.sample_width - self.patch_min_width {
             for format in &self.patch_formats {
                 for h in Seq::new(self.patch_min_height, |x| x + self.patch_size_inc_step)
-                    .take_while(|x| *x <= self.sample_height) {
-
+                    .take_while(|x| *x <= self.sample_height)
+                {
                     if h % format.num_cell_per_col != 0 || h % format.height != 0 {
                         continue;
                     }
                     let w = h / format.height * format.width;
-                    if w % format.num_cell_per_row != 0 || w < self.patch_min_width || w > self.sample_width {
+                    if w % format.num_cell_per_row != 0
+                        || w < self.patch_min_width
+                        || w > self.sample_width
+                    {
                         continue;
                     }
-                    self.collect_features(w, h, format.num_cell_per_row, format.num_cell_per_col, &mut feature_vecs);
+                    self.collect_features(
+                        w,
+                        h,
+                        format.num_cell_per_row,
+                        format.num_cell_per_col,
+                        &mut feature_vecs,
+                    );
                 }
             }
         } else {
@@ -603,16 +564,25 @@ impl FeaturePool {
                 // original condition was <= self.patch_min_width,
                 // but it would not make sense to have a loop in such case
                 for w in Seq::new(self.patch_min_width, |x| x + self.patch_size_inc_step)
-                    .take_while(|x| *x <= self.sample_width) {
-
+                    .take_while(|x| *x <= self.sample_width)
+                {
                     if w % format.num_cell_per_row != 0 || w % format.width != 0 {
                         continue;
                     }
                     let h = w / format.width * format.height;
-                    if h % format.num_cell_per_col != 0 || h < self.patch_min_height || h > self.sample_height {
+                    if h % format.num_cell_per_col != 0
+                        || h < self.patch_min_height
+                        || h > self.sample_height
+                    {
                         continue;
                     }
-                    self.collect_features(w, h, format.num_cell_per_row, format.num_cell_per_col, &mut feature_vecs);
+                    self.collect_features(
+                        w,
+                        h,
+                        format.num_cell_per_row,
+                        format.num_cell_per_col,
+                        &mut feature_vecs,
+                    );
                 }
             }
         }
@@ -620,18 +590,24 @@ impl FeaturePool {
         self.features.append(&mut feature_vecs);
     }
 
-    fn collect_features(&self, width: u32, height: u32, num_cell_per_row: u32, num_cell_per_col: u32, dest: &mut Vec<Feature>) {
+    fn collect_features(
+        &self,
+        width: u32,
+        height: u32,
+        num_cell_per_row: u32,
+        num_cell_per_col: u32,
+        dest: &mut Vec<Feature>,
+    ) {
         let y_lim = self.sample_height - height;
         let x_lim = self.sample_width - width;
 
         for y in Seq::new(0, |n| n + self.patch_move_step_y).take_while(|n| *n <= y_lim) {
             for x in Seq::new(0, |n| n + self.patch_move_step_x).take_while(|n| *n <= x_lim) {
-                dest.push(
-                    Feature {
-                        patch: Rectangle::new(x as i32, y as i32, width, height),
-                        num_cell_per_row, num_cell_per_col
-                    }
-                );
+                dest.push(Feature {
+                    patch: Rectangle::new(x as i32, y as i32, width, height),
+                    num_cell_per_row,
+                    num_cell_per_col,
+                });
             }
         }
     }
@@ -646,7 +622,8 @@ impl FeaturePool {
 
     fn get_feature_vector_dim(&self, feature_id: usize) -> usize {
         let feature = &self.features[feature_id];
-        (feature.num_cell_per_col * feature.num_cell_per_row * FeaturePool::K_NUM_INT_CHANNEL) as usize
+        (feature.num_cell_per_col * feature.num_cell_per_row * FeaturePool::K_NUM_INT_CHANNEL)
+            as usize
     }
 }
 

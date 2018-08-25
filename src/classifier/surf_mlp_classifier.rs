@@ -23,8 +23,8 @@ use math;
 use super::{Classifier, Score};
 use common::{ImageData, Rectangle};
 use feat::{FeatureMap, SurfMlpFeatureMap};
-use std::ptr;
 use std::cell::RefCell;
+use std::ptr;
 
 use rayon::prelude::*;
 
@@ -87,22 +87,36 @@ impl SurfMlpClassifier {
         self.thresh = thresh;
     }
 
-    pub fn add_layer(&mut self, input_dim: usize, output_dim: usize, weights: Vec<f32>, biases: Vec<f32>) {
-        self.layers.push(
-            Layer {
-                input_dim, output_dim, weights, biases,
-                act_func: Box::new(Self::relu)
-            }
-        )
+    pub fn add_layer(
+        &mut self,
+        input_dim: usize,
+        output_dim: usize,
+        weights: Vec<f32>,
+        biases: Vec<f32>,
+    ) {
+        self.layers.push(Layer {
+            input_dim,
+            output_dim,
+            weights,
+            biases,
+            act_func: Box::new(Self::relu),
+        })
     }
 
-    pub fn add_output_layer(&mut self, input_dim: usize, output_dim: usize, weights: Vec<f32>, biases: Vec<f32>) {
-        self.layers.push(
-            Layer {
-                input_dim, output_dim, weights, biases,
-                act_func: Box::new(Self::sigmoid)
-            }
-        )
+    pub fn add_output_layer(
+        &mut self,
+        input_dim: usize,
+        output_dim: usize,
+        weights: Vec<f32>,
+        biases: Vec<f32>,
+    ) {
+        self.layers.push(Layer {
+            input_dim,
+            output_dim,
+            weights,
+            biases,
+            act_func: Box::new(Self::sigmoid),
+        })
     }
 
     fn relu(x: f32) -> f32 {
@@ -121,7 +135,9 @@ impl SurfMlpClassifier {
         let input = self.input_buf.as_ref().unwrap();
         let output = self.output_buf.as_mut().unwrap();
 
-        self.layers_buf.get_input().resize(self.layers[0].output_size(), 0.0);
+        self.layers_buf
+            .get_input()
+            .resize(self.layers[0].output_size(), 0.0);
         self.layers[0].compute(input, self.layers_buf.get_input());
 
         for i in 1..(self.layers.len() - 1) {
@@ -151,10 +167,13 @@ struct Layer {
 
 impl Layer {
     fn compute(&self, input: &[f32], output: &mut [f32]) {
-        self.weights.par_chunks(self.input_dim)
+        self.weights
+            .par_chunks(self.input_dim)
             .zip(&self.biases)
-            .zip(output).for_each(|((weights, bias), output)| {
-                let x = math::vector_inner_product(input.as_ptr(), weights.as_ptr(), self.input_dim) + bias;
+            .zip(output)
+            .for_each(|((weights, bias), output)| {
+                let x = math::vector_inner_product(input.as_ptr(), weights.as_ptr(), self.input_dim)
+                    + bias;
                 *output = (self.act_func)(x);
             });
     }
@@ -204,7 +223,11 @@ impl Classifier for SurfMlpClassifier {
 
         if let Some(output) = output {
             unsafe {
-                ptr::copy_nonoverlapping(output_buf.as_ptr(), output.as_mut_ptr(), output_buf.len());
+                ptr::copy_nonoverlapping(
+                    output_buf.as_ptr(),
+                    output.as_mut_ptr(),
+                    output_buf.len(),
+                );
             }
         }
 
@@ -212,7 +235,9 @@ impl Classifier for SurfMlpClassifier {
     }
 
     fn compute(&mut self, image: &ImageData) {
-        (*self.feature_map).borrow_mut().compute(image.data(), image.width(), image.height());
+        (*self.feature_map)
+            .borrow_mut()
+            .compute(image.data(), image.width(), image.height());
     }
 
     fn set_roi(&mut self, roi: Rectangle) {

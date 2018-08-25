@@ -16,12 +16,12 @@
 // You should have received a copy of the BSD 2-Clause License along with the software.
 // If not, see < https://opensource.org/licenses/BSD-2-Clause>.
 
-use std::{cmp, ptr};
 use std::cmp::Ordering::*;
+use std::{cmp, ptr};
 
-use Detector;
-use common::{FaceInfo, ImageData, ImagePyramid, Rectangle, Seq, resize_image};
+use common::{resize_image, FaceInfo, ImageData, ImagePyramid, Rectangle, Seq};
 use model::Model;
+use Detector;
 
 const FUST_MIN_WINDOW_SIZE: u32 = 20;
 
@@ -41,12 +41,13 @@ impl Detector for FuStDetector {
         let mut image_pyramid = ImagePyramid::new();
         image_pyramid.set_image_1x(image.data(), image.width(), image.height());
         // TODO: uncomment (expect perf hit)
-//        image_pyramid.set_max_scale(K_WND_SIZE / self.min_face_size as f32);
+        //        image_pyramid.set_max_scale(K_WND_SIZE / self.min_face_size as f32);
         image_pyramid.set_min_scale(K_WND_SIZE / min_img_size as f32);
         image_pyramid.set_scale_step(self.image_pyramid_scale_factor);
         self.set_window_size(K_WND_SIZE as u32);
 
-        self.detect_impl(&mut image_pyramid).into_iter()
+        self.detect_impl(&mut image_pyramid)
+            .into_iter()
             .filter(|x| x.score() >= self.cls_thresh)
             .collect()
     }
@@ -141,19 +142,24 @@ impl FuStDetector {
         let img_height = img.height() as i32;
 
         let pad_right = cmp::max(roi.x() + roi_width - img_width, 0);
-        let pad_left = if roi.x() >= 0 { 0 } else {
+        let pad_left = if roi.x() >= 0 {
+            0
+        } else {
             let t = roi.x();
             roi.set_x(0);
             -t
         };
         let pad_bottom = cmp::max(roi.y() + roi_height - img_height, 0);
-        let pad_top = if roi.y() >= 0 { 0 } else {
+        let pad_top = if roi.y() >= 0 {
+            0
+        } else {
             let t = roi.y();
             roi.set_y(0);
             -t
         };
 
-        self.wnd_data_buf.resize((roi_width * roi_height) as usize, 0);
+        self.wnd_data_buf
+            .resize((roi_width * roi_height) as usize, 0);
         let mut src;
         unsafe {
             src = img.data().offset((roi.y() * img_width + roi.x()) as isize);
@@ -178,7 +184,7 @@ impl FuStDetector {
                         dest = dest.offset(roi_width as isize);
                     }
                 }
-            },
+            }
             (0, _) => {
                 for _y in pad_top..(roi_height - pad_bottom) {
                     unsafe {
@@ -188,7 +194,7 @@ impl FuStDetector {
                         ptr::write_bytes(dest.offset(-pad_right as isize), 0, pad_right as usize);
                     }
                 }
-            },
+            }
             (_, 0) => {
                 for _y in pad_top..(roi_height - pad_bottom) {
                     unsafe {
@@ -198,7 +204,7 @@ impl FuStDetector {
                         dest = dest.offset(roi_width as isize);
                     }
                 }
-            },
+            }
             (_, _) => {
                 for _y in pad_top..(roi_height - pad_bottom) {
                     unsafe {
@@ -209,7 +215,7 @@ impl FuStDetector {
                         ptr::write_bytes(dest.offset(-pad_right as isize), 0, pad_right as usize);
                     }
                 }
-            },
+            }
         }
 
         if pad_bottom > 0 {
@@ -219,7 +225,12 @@ impl FuStDetector {
         }
 
         let src_img = ImageData::new(self.wnd_data_buf.as_ptr(), roi.width(), roi.height());
-        resize_image(&src_img, self.wnd_data.as_mut_ptr(), self.wnd_size, self.wnd_size);
+        resize_image(
+            &src_img,
+            self.wnd_data.as_mut_ptr(),
+            self.wnd_size,
+            self.wnd_size,
+        );
     }
 
     fn detect_impl(&mut self, image: &mut ImagePyramid) -> Vec<FaceInfo> {
@@ -250,23 +261,33 @@ impl FuStDetector {
 
             for y in Seq::new(0, move |n| n + step_y).take_while(move |n| *n <= max_y) {
                 for x in Seq::new(0, move |n| n + step_x).take_while(move |n| *n <= max_x) {
+                    self.model.get_classifiers()[0].set_roi(Rectangle::new(
+                        x as i32,
+                        y as i32,
+                        self.wnd_size,
+                        self.wnd_size,
+                    ));
 
-                    self.model.get_classifiers()[0].set_roi(Rectangle::new(x as i32, y as i32, self.wnd_size, self.wnd_size));
+                    wnd_info
+                        .bbox_mut()
+                        .set_x((x as f32 / scale_factor + 0.5) as i32);
+                    wnd_info
+                        .bbox_mut()
+                        .set_y((y as f32 / scale_factor + 0.5) as i32);
 
-                    wnd_info.bbox_mut().set_x((x as f32 / scale_factor + 0.5) as i32);
-                    wnd_info.bbox_mut().set_y((y as f32 / scale_factor + 0.5) as i32);
-
-                    for (classifier, proposal) in
-                        self.model.get_classifiers().iter_mut()
-                            .zip(proposals.iter_mut())
-                            .take(first_hierarchy_size)
-                        {
-                            let score = classifier.classify(None);
-                            if score.is_positive() {
-                                wnd_info.set_score(f64::from(score.score()));
-                                proposal.push(wnd_info.clone());
-                            }
+                    for (classifier, proposal) in self
+                        .model
+                        .get_classifiers()
+                        .iter_mut()
+                        .zip(proposals.iter_mut())
+                        .take(first_hierarchy_size)
+                    {
+                        let score = classifier.classify(None);
+                        if score.is_positive() {
+                            wnd_info.set_score(f64::from(score.score()));
+                            proposal.push(wnd_info.clone());
                         }
+                    }
                 }
             }
         }
@@ -284,7 +305,6 @@ impl FuStDetector {
         let mut buf_idx: Vec<i32> = vec![];
 
         for i in 1..self.model.get_hierarchy_count() {
-
             let hierarchy_size_i = self.model.get_hierarchy_size(i) as usize;
             if buf_idx.len() < hierarchy_size_i {
                 buf_idx.resize(hierarchy_size_i, 0);
@@ -315,17 +335,28 @@ impl FuStDetector {
                         let bboxes = &mut proposals[r];
 
                         for m in 0..num_wnd {
-                            if bboxes[m].bbox().x() + bboxes[m].bbox().width() as i32 <= 0 ||
-                                bboxes[m].bbox().y() + bboxes[m].bbox().height() as i32 <= 0 {
+                            if bboxes[m].bbox().x() + bboxes[m].bbox().width() as i32 <= 0
+                                || bboxes[m].bbox().y() + bboxes[m].bbox().height() as i32 <= 0
+                            {
                                 continue;
                             }
 
                             self.get_window_data(&image1x, bboxes[m].bbox_mut());
-                            let img_temp = ImageData::new(self.wnd_data.as_ptr(), self.wnd_size, self.wnd_size);
+                            let img_temp = ImageData::new(
+                                self.wnd_data.as_ptr(),
+                                self.wnd_size,
+                                self.wnd_size,
+                            );
                             self.model.get_classifiers()[model_idx].compute(&img_temp);
-                            self.model.get_classifiers()[model_idx].set_roi(Rectangle::new(0, 0, self.wnd_size, self.wnd_size));
+                            self.model.get_classifiers()[model_idx].set_roi(Rectangle::new(
+                                0,
+                                0,
+                                self.wnd_size,
+                                self.wnd_size,
+                            ));
 
-                            let new_score = self.model.get_classifiers()[model_idx].classify(Some(&mut mlp_predicts));
+                            let new_score = self.model.get_classifiers()[model_idx]
+                                .classify(Some(&mut mlp_predicts));
                             if new_score.is_positive() {
                                 let x = bboxes[m].bbox().x() as f32;
                                 let y = bboxes[m].bbox().y() as f32;
@@ -337,10 +368,20 @@ impl FuStDetector {
                                 bboxes[bbox_id].bbox_mut().set_height(bbox_w as u32);
 
                                 bboxes[bbox_id].bbox_mut().set_x(
-                                    ((mlp_predicts[1] * 2.0 - 1.0) * w + x + (w - bbox_w) * 0.5 + 0.5).floor() as i32);
+                                    ((mlp_predicts[1] * 2.0 - 1.0) * w
+                                        + x
+                                        + (w - bbox_w) * 0.5
+                                        + 0.5)
+                                        .floor() as i32,
+                                );
 
                                 bboxes[bbox_id].bbox_mut().set_y(
-                                    ((mlp_predicts[2] * 2.0 - 1.0) * h + y + (h - bbox_w) * 0.5 + 0.5).floor() as i32);
+                                    ((mlp_predicts[2] * 2.0 - 1.0) * h
+                                        + y
+                                        + (h - bbox_w) * 0.5
+                                        + 0.5)
+                                        .floor() as i32,
+                                );
 
                                 bboxes[bbox_id].set_score(f64::from(new_score.score()));
 
@@ -374,7 +415,11 @@ impl FuStDetector {
     }
 }
 
-fn non_maximum_suppression(bboxes: &mut Vec<FaceInfo>, bboxes_nms: &mut Vec<FaceInfo>, iou_thresh: f32) {
+fn non_maximum_suppression(
+    bboxes: &mut Vec<FaceInfo>,
+    bboxes_nms: &mut Vec<FaceInfo>,
+    iou_thresh: f32,
+) {
     bboxes_nms.clear();
     bboxes.sort_by(|x, y| {
         let x_score = x.score();
@@ -431,8 +476,14 @@ fn non_maximum_suppression(bboxes: &mut Vec<FaceInfo>, bboxes_nms: &mut Vec<Face
 
             let x = cmp::max(x1, bboxes[i].bbox().x());
             let y = cmp::max(y1, bboxes[i].bbox().y());
-            let w = cmp::min(x2, (bboxes[i].bbox().x() + bboxes[i].bbox().width() as i32 - 1)) - x + 1;
-            let h = cmp::min(y2, (bboxes[i].bbox().y() + bboxes[i].bbox().height() as i32 - 1)) - y + 1;
+            let w = cmp::min(
+                x2,
+                bboxes[i].bbox().x() + bboxes[i].bbox().width() as i32 - 1,
+            ) - x + 1;
+            let h = cmp::min(
+                y2,
+                bboxes[i].bbox().y() + bboxes[i].bbox().height() as i32 - 1,
+            ) - y + 1;
 
             if w <= 0 || h <= 0 {
                 continue;
@@ -445,7 +496,6 @@ fn non_maximum_suppression(bboxes: &mut Vec<FaceInfo>, bboxes_nms: &mut Vec<Face
                 mask_merged[i] = true;
                 let bbox_i_score = bboxes[i].score();
                 score += bbox_i_score;
-
             }
         }
 

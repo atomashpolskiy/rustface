@@ -16,26 +16,23 @@
 // You should have received a copy of the BSD 2-Clause License along with the software.
 // If not, see < https://opensource.org/licenses/BSD-2-Clause>.
 
-#![feature(cfg_target_feature, target_feature)]
-
-extern crate stdsimd;
 extern crate byteorder;
 extern crate num;
 extern crate rayon;
 
-mod common;
-mod math;
-mod feat;
 mod classifier;
+mod common;
 mod detector;
+mod feat;
+pub mod math;
 pub mod model;
 
-pub use common::ImageData;
 pub use common::FaceInfo;
-pub use model::{Model, load_model, read_model};
+pub use common::ImageData;
+pub use model::{load_model, read_model, Model};
 
-use std::io;
 use detector::FuStDetector;
+use std::io;
 
 /// Create a face detector, based on a file with model description.
 pub fn create_detector(path_to_model: &str) -> Result<Box<Detector>, io::Error> {
