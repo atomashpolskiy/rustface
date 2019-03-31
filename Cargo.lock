@@ -569,7 +569,7 @@ dependencies = [
 
 [[package]]
 name = "rustface"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "byteorder 1.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "criterion 0.2.10 (registry+https://github.com/rust-lang/crates.io-index)",
