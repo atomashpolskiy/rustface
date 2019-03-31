@@ -1,7 +1,7 @@
 [package]
 name = "rustface"
 description = "Face detection library, based on the C++ SeetaFace engine."
-version = "0.1.1"
+version = "0.1.2"
 repository = "https://github.com/atomashpolskiy/rustface"
 readme = "README.md"
 keywords = ["face", "detection"]
@@ -18,8 +18,8 @@ byteorder = "1.2.6"
 rayon = "1.0.2"
 
 [dev-dependencies]
-image = "0.18.0"
-imageproc = "0.13.0"
+image = "0.21.0"
+imageproc = "0.18.0"
 criterion = "0.2.4"
 
 [[bench]]
