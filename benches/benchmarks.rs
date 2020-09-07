@@ -3,10 +3,6 @@ extern crate criterion;
 
 use criterion::Criterion;
 
-extern crate image;
-extern crate imageproc;
-extern crate rustface;
-
 use criterion::{Bencher, Benchmark, Fun};
 use image::DynamicImage;
 use rustface::math::{abs, square, vector_add, vector_inner_product, vector_sub};
@@ -26,7 +22,7 @@ fn get_test_image() -> DynamicImage {
     return image;
 }
 
-fn get_default_detector() -> Box<Detector> {
+fn get_default_detector() -> Box<dyn Detector> {
     let model_path = "./model/seeta_fd_frontal_v1.0.bin";
     let mut detector = match rustface::create_detector(model_path) {
         Ok(detector) => detector,
@@ -112,7 +108,7 @@ fn bench_vector_inner_product(c: &mut Criterion) {
 }
 
 fn bench_square_compare(c: &mut Criterion) {
-    let naive = Fun::new("naive", |b: &mut Bencher, input: &Vec<i32>| {
+    let naive = Fun::new("naive", |b: &mut Bencher<'_>, input: &Vec<i32>| {
         let mut target: Vec<i32> = vec![0; input.len()];
         b.iter(|| {
             for (i, e) in input.iter().enumerate() {
@@ -121,7 +117,7 @@ fn bench_square_compare(c: &mut Criterion) {
         })
     });
 
-    let naive_iterator = Fun::new("naive_iterator", |b: &mut Bencher, input: &Vec<i32>| {
+    let naive_iterator = Fun::new("naive_iterator", |b: &mut Bencher<'_>, input: &Vec<i32>| {
         b.iter(|| {
             let _target: Vec<i32> = input.iter().map(|a| a.pow(2)).collect();
         })
@@ -146,7 +142,7 @@ fn bench_square_compare(c: &mut Criterion) {
 }
 
 fn bench_abs_compare(c: &mut Criterion) {
-    let naive = Fun::new("naive", |b: &mut Bencher, input: &Vec<i32>| {
+    let naive = Fun::new("naive", |b: &mut Bencher<'_>, input: &Vec<i32>| {
         let mut target: Vec<i32> = vec![0; input.len()];
         b.iter(|| {
             for (i, e) in input.iter().enumerate() {
@@ -155,7 +151,7 @@ fn bench_abs_compare(c: &mut Criterion) {
         })
     });
 
-    let naive_iterator = Fun::new("naive_iterator", |b: &mut Bencher, input: &Vec<i32>| {
+    let naive_iterator = Fun::new("naive_iterator", |b: &mut Bencher<'_>, input: &Vec<i32>| {
         b.iter(|| {
             let _target: Vec<i32> = input.iter().map(|a| a.abs()).collect();
         })

@@ -22,12 +22,12 @@ use std::io;
 use std::io::{Cursor, Read};
 use std::rc::Rc;
 
+use crate::classifier::{Classifier, ClassifierKind, LabBoostedClassifier, SurfMlpClassifier};
+use crate::feat::{LabBoostedFeatureMap, SurfMlpFeatureMap};
 use byteorder::{LittleEndian, ReadBytesExt};
-use classifier::{Classifier, ClassifierKind, LabBoostedClassifier, SurfMlpClassifier};
-use feat::{LabBoostedFeatureMap, SurfMlpFeatureMap};
 
 pub struct Model {
-    classifiers: Vec<Box<Classifier>>,
+    classifiers: Vec<Box<dyn Classifier>>,
     wnd_src_id: Vec<Vec<i32>>,
     hierarchy_sizes: Vec<i32>,
     num_stages: Vec<i32>,
@@ -43,7 +43,7 @@ impl Model {
         }
     }
 
-    pub fn get_classifiers(&mut self) -> &mut Vec<Box<Classifier>> {
+    pub fn get_classifiers(&mut self) -> &mut Vec<Box<dyn Classifier>> {
         &mut self.classifiers
     }
 
@@ -138,7 +138,7 @@ impl ModelReader {
     fn create_classifier(
         &mut self,
         classifier_kind: &ClassifierKind,
-    ) -> Result<Box<Classifier>, io::Error> {
+    ) -> Result<Box<dyn Classifier>, io::Error> {
         match *classifier_kind {
             ClassifierKind::LabBoosted => {
                 let mut classifier =

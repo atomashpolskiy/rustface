@@ -16,9 +16,9 @@
 // You should have received a copy of the BSD 2-Clause License along with the software.
 // If not, see < https://opensource.org/licenses/BSD-2-Clause>.
 
-use common::{Rectangle, Seq};
-use feat::FeatureMap;
-use math;
+use crate::common::{Rectangle, Seq};
+use crate::feat::FeatureMap;
+use crate::math;
 
 use std::ptr;
 

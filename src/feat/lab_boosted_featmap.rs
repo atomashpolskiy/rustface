@@ -20,9 +20,9 @@ use num;
 use num::integer::Integer;
 use num::traits::WrappingAdd;
 
-use common::Rectangle;
-use feat::FeatureMap;
-use math;
+use crate::common::Rectangle;
+use crate::feat::FeatureMap;
+use crate::math;
 
 pub struct LabBoostedFeatureMap {
     roi: Option<Rectangle>,

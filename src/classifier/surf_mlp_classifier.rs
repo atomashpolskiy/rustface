@@ -18,11 +18,11 @@
 
 use std::rc::Rc;
 
-use math;
+use crate::math;
 
 use super::{Classifier, Score};
-use common::{ImageData, Rectangle};
-use feat::{FeatureMap, SurfMlpFeatureMap};
+use crate::common::{ImageData, Rectangle};
+use crate::feat::{FeatureMap, SurfMlpFeatureMap};
 use std::cell::RefCell;
 use std::ptr;
 
@@ -155,7 +155,7 @@ impl SurfMlpClassifier {
     }
 }
 
-type ActFunc = Fn(f32) -> f32 + Sync;
+type ActFunc = dyn Fn(f32) -> f32 + Sync;
 
 struct Layer {
     input_dim: usize,

@@ -22,7 +22,7 @@ mod surf_mlp_classifier;
 pub use self::lab_boosted_classifier::LabBoostedClassifier;
 pub use self::surf_mlp_classifier::SurfMlpClassifier;
 
-use common::{ImageData, Rectangle};
+use crate::common::{ImageData, Rectangle};
 
 #[derive(Debug, Hash, PartialEq, Eq, Clone)]
 pub enum ClassifierKind {

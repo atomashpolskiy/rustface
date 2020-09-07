@@ -20,8 +20,8 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use super::{Classifier, Score};
-use common::{ImageData, Rectangle};
-use feat::{FeatureMap, LabBoostedFeatureMap};
+use crate::common::{ImageData, Rectangle};
+use crate::feat::{FeatureMap, LabBoostedFeatureMap};
 
 pub struct LabBoostedClassifier {
     feature_map: Rc<RefCell<LabBoostedFeatureMap>>,
