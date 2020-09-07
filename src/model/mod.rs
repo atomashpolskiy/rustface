@@ -18,8 +18,8 @@
 
 use std::cell::RefCell;
 use std::fs::File;
+use std::io::BufReader;
 use std::io;
-use std::io::{Cursor, Read};
 use std::rc::Rc;
 
 use byteorder::{LittleEndian, ReadBytesExt};
@@ -66,26 +66,24 @@ impl Model {
 
 /// Load model from a file.
 pub fn load_model(path: &str) -> Result<Model, io::Error> {
-    let mut buf = vec![];
-    File::open(path).map(|mut file| file.read_to_end(&mut buf))??;
-    read_model(buf)
+    read_model(BufReader::new(File::open(path)?))
 }
 
-/// Load model from an in-memory buffer.
-pub fn read_model(buf: Vec<u8>) -> Result<Model, io::Error> {
+/// Load model from any stream or buffer
+pub fn read_model<R: io::Read>(buf: R) -> Result<Model, io::Error> {
     ModelReader::new(buf).read()
 }
 
-struct ModelReader {
-    reader: Cursor<Vec<u8>>,
+struct ModelReader<R: io::Read> {
+    reader: R,
     lab_boosted_feature_map: Rc<RefCell<LabBoostedFeatureMap>>,
     surf_mlp_feature_map: Rc<RefCell<SurfMlpFeatureMap>>,
 }
 
-impl ModelReader {
-    fn new(buf: Vec<u8>) -> Self {
+impl<R: io::Read> ModelReader<R> {
+    fn new(reader: R) -> Self {
         ModelReader {
-            reader: Cursor::new(buf),
+            reader,
             lab_boosted_feature_map: Rc::new(RefCell::new(LabBoostedFeatureMap::new())),
             surf_mlp_feature_map: Rc::new(RefCell::new(SurfMlpFeatureMap::new())),
         }
@@ -225,10 +223,12 @@ impl ModelReader {
         Ok(())
     }
 
+    #[inline]
     fn read_i32(&mut self) -> Result<i32, io::Error> {
         self.reader.read_i32::<LittleEndian>()
     }
 
+    #[inline]
     fn read_f32(&mut self) -> Result<f32, io::Error> {
         self.reader.read_f32::<LittleEndian>()
     }
