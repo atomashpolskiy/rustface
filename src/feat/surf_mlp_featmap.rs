@@ -444,14 +444,9 @@ impl SurfMlpFeatureMap {
             let feature_vec = self.feature_vectors[feature_id].as_mut_ptr();
             self.compute_feature_vector(feature, feature_vec);
 
-            let feature_vec = self.feature_vectors[feature_id].as_ptr();
-            let feature_vec_normalized = self.feature_vectors_normalized[feature_id].as_mut_ptr();
-            let length = self.feature_vectors_normalized[feature_id].len();
-            SurfMlpFeatureMap::normalize_feature_vector(
-                feature_vec,
-                feature_vec_normalized,
-                length,
-            );
+            let feature_vec = self.feature_vectors[feature_id].as_slice();
+            let feature_vec_normalized = self.feature_vectors_normalized[feature_id].as_mut_slice();
+            SurfMlpFeatureMap::normalize_feature_vector(feature_vec, feature_vec_normalized);
         }
 
         let feature_vec_normalized = self.feature_vectors_normalized[feature_id].as_ptr();
@@ -459,26 +454,19 @@ impl SurfMlpFeatureMap {
         ptr::copy_nonoverlapping(feature_vec_normalized, feature_vec, length);
     }
 
-    unsafe fn normalize_feature_vector(
-        feature_vec: *const i32,
-        feature_vec_normalized: *mut f32,
-        length: usize,
-    ) {
-        let mut prod: f64 = 0.0;
-
-        for i in 0..length as isize {
-            let value = *feature_vec.offset(i);
-            prod += f64::from(value * value);
-        }
+    fn normalize_feature_vector(feature_vec: &[i32], feature_vec_normalized: &mut [f32]) {
+        let prod: f64 = feature_vec.iter().copied().map(|value| {
+            f64::from(value * value)
+        }).sum();
 
         if prod != 0.0 {
             let norm = prod.sqrt() as f32;
-            for i in 0..length as isize {
-                *feature_vec_normalized.offset(i) = *feature_vec.offset(i) as f32 / norm;
+            for (dst, src) in feature_vec_normalized.iter_mut().zip(feature_vec) {
+                *dst = *src as f32 / norm;
             }
         } else {
-            for i in 0..length as isize {
-                *feature_vec_normalized.offset(i) = 0.0;
+            for dst in feature_vec_normalized {
+                *dst = 0.0;
             }
         }
     }
