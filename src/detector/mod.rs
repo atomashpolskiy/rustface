@@ -19,9 +19,9 @@
 use std::cmp::Ordering::*;
 use std::{cmp, ptr};
 
-use common::{resize_image, FaceInfo, ImageData, ImagePyramid, Rectangle, Seq};
-use model::Model;
-use Detector;
+use crate::common::{resize_image, FaceInfo, ImageData, ImagePyramid, Rectangle, Seq};
+use crate::model::Model;
+use crate::Detector;
 
 const FUST_MIN_WINDOW_SIZE: u32 = 20;
 

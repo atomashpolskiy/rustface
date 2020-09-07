@@ -11,6 +11,7 @@ license = "BSD-2-Clause"
 exclude = [
     "assets/*",
 ]
+edition = "2018"
 
 [dependencies]
 num = "0.3"

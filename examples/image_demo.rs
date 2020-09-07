@@ -16,10 +16,6 @@
 // You should have received a copy of the BSD 2-Clause License along with the software.
 // If not, see < https://opensource.org/licenses/BSD-2-Clause>.
 
-extern crate image;
-extern crate imageproc;
-extern crate rustface;
-
 use std::env::Args;
 use std::time::{Duration, Instant};
 
@@ -77,7 +73,7 @@ fn main() {
     }
 }
 
-fn detect_faces(detector: &mut Detector, gray: &GrayImage) -> Vec<FaceInfo> {
+fn detect_faces(detector: &mut dyn Detector, gray: &GrayImage) -> Vec<FaceInfo> {
     let (width, height) = gray.dimensions();
     let mut image = ImageData::new(gray.as_ptr(), width, height);
     let now = Instant::now();
