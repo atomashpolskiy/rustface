@@ -26,6 +26,7 @@ use crate::feat::{FeatureMap, SurfMlpFeatureMap};
 use std::cell::RefCell;
 use std::ptr;
 
+#[cfg(feature = "rayon")]
 use rayon::prelude::*;
 
 struct TwoWayBuffer {
@@ -166,14 +167,30 @@ struct Layer {
 }
 
 impl Layer {
+    #[cfg(feature = "rayon")]
     fn compute(&self, input: &[f32], output: &mut [f32]) {
         self.weights
             .par_chunks(self.input_dim)
             .zip(&self.biases)
             .zip(output)
             .for_each(|((weights, bias), output)| {
-                let x = math::vector_inner_product(input.as_ptr(), weights.as_ptr(), self.input_dim)
-                    + bias;
+                let x =
+                    math::vector_inner_product(input.as_ptr(), weights.as_ptr(), self.input_dim)
+                        + bias;
+                *output = (self.act_func)(x);
+            });
+    }
+
+    #[cfg(not(feature = "rayon"))]
+    fn compute(&self, input: &[f32], output: &mut [f32]) {
+        self.weights
+            .chunks(self.input_dim)
+            .zip(&self.biases)
+            .zip(output)
+            .for_each(|((weights, bias), output)| {
+                let x =
+                    math::vector_inner_product(input.as_ptr(), weights.as_ptr(), self.input_dim)
+                        + bias;
                 *output = (self.act_func)(x);
             });
     }
