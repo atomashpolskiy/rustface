@@ -19,9 +19,9 @@
 use crate::common::{Rectangle, Seq};
 use crate::feat::FeatureMap;
 use crate::math;
-
 use std::ptr;
 
+#[cfg(feature = "rayon")]
 use rayon::prelude::*;
 
 pub struct SurfMlpFeatureMap {
@@ -144,9 +144,21 @@ impl SurfMlpFeatureMap {
             math::vector_add(dy, dy, dy, len);
 
             let step = self.width as usize;
+
+            #[cfg(feature = "rayon")]
             self.img_buf
                 .par_chunks(step)
                 .zip(self.grad_y[step..].par_chunks_mut(step))
+                .for_each(|(inputs, outputs)| {
+                    let src = inputs.as_ptr();
+                    let dest = outputs.as_mut_ptr();
+                    math::vector_sub(src.offset((step << 1) as isize), src, dest, len);
+                });
+
+            #[cfg(not(feature = "rayon"))]
+            self.img_buf
+                .chunks(step)
+                .zip(self.grad_y[step..].chunks_mut(step))
                 .for_each(|(inputs, outputs)| {
                     let src = inputs.as_ptr();
                     let dest = outputs.as_mut_ptr();
@@ -455,9 +467,11 @@ impl SurfMlpFeatureMap {
     }
 
     fn normalize_feature_vector(feature_vec: &[i32], feature_vec_normalized: &mut [f32]) {
-        let prod: f64 = feature_vec.iter().copied().map(|value| {
-            f64::from(value * value)
-        }).sum();
+        let prod: f64 = feature_vec
+            .iter()
+            .copied()
+            .map(|value| f64::from(value * value))
+            .sum();
 
         if prod != 0.0 {
             let norm = prod.sqrt() as f32;
