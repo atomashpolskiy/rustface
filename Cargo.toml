@@ -30,7 +30,5 @@ harness = false
 [profile.release]
 lto = true
 
-
-features = ["rayon"]
-default=["rayon"]
-
+[features]
+default = ["rayon"]
