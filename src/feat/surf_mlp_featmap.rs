@@ -146,19 +146,18 @@ impl SurfMlpFeatureMap {
             let step = self.width as usize;
 
             #[cfg(feature = "rayon")]
-            self.img_buf
+            let it = self.img_buf
                 .par_chunks(step)
-                .zip(self.grad_y[step..].par_chunks_mut(step))
-                .for_each(|(inputs, outputs)| {
-                    let src = inputs.as_ptr();
-                    let dest = outputs.as_mut_ptr();
-                    math::vector_sub(src.offset((step << 1) as isize), src, dest, len);
-                });
+                .zip(self.grad_y[step..]
+                .par_chunks_mut(step));
 
             #[cfg(not(feature = "rayon"))]
-            self.img_buf
+            let it = self.img_buf
                 .chunks(step)
-                .zip(self.grad_y[step..].chunks_mut(step))
+                .zip(self.grad_y[step..]
+                .chunks_mut(step));
+
+            it
                 .for_each(|(inputs, outputs)| {
                     let src = inputs.as_ptr();
                     let dest = outputs.as_mut_ptr();
