@@ -122,9 +122,12 @@ export RAYON_NUM_THREADS=2
 cargo run --release --example image_demo model/seeta_fd_frontal_v1.0.bin <path-to-image>
 ```
 
+Note that Rayon can be disabled entirely at compile time by providing the `--no-default-features` flag.
+
 ## TODO
 
 * Use stable SIMD intrinsics when available
+* Benchmark benefit of parallelisation. Compiler improvements may have reduced the relative benefit of parallel processing, especially when running on smaller images. Simplify where possible.
 * Parallelize remaining CPU intensive loops
 * Tests (it would make sense to start with an integration test for `Detector::detect`, based on the results retrieved from the original library)
 
