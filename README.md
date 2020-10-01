@@ -133,13 +133,17 @@ Note that Rayon can be disabled entirely at compile time by providing the `--no-
 
 ## Authors
 
-- Andrei Tomashpolskiy \<nordmann89@gmail.com\>
+- Andrei Tomashpolskiy [@atomashpolskiy](https://github.com/atomashpolskiy)
   
   _Original developer and maintainer_
-  
-- Ashley \<[github.com/expenses](https://github.com/expenses)\>
 
-  _Contributed the switch from OpenCV to [Image](https://crates.io/crates/image)_
+- Jurriaan BW [@jjhbw](https://github.com/jjhbw)
+
+  _Contributor and chief maintainer_
+  
+- Ashley [@expenses](https://github.com/expenses)
+
+  _Contributor. Added the switch from OpenCV to [Image](https://crates.io/crates/image)._
 
 This library is based on the following works:
 
