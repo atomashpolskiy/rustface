@@ -39,7 +39,7 @@ pub struct LabBoostedFeatureMap {
 }
 
 impl FeatureMap for LabBoostedFeatureMap {
-    fn compute(&mut self, input: *const u8, width: u32, height: u32) {
+    fn compute(&mut self, input: &[u8], width: u32, height: u32) {
         if width == 0 || height == 0 {
             panic!(format!(
                 "Illegal arguments: width ({}), height ({})",
@@ -152,7 +152,7 @@ impl LabBoostedFeatureMap {
     fn reshape(&mut self, width: u32, height: u32) {
         self.width = width;
         self.height = height;
-        self.length = (width * height) as usize;
+        self.length = width as usize * height as usize;
 
         self.feat_map.resize(self.length, 0);
         self.rect_sum.resize(self.length, 0);
@@ -160,13 +160,12 @@ impl LabBoostedFeatureMap {
         self.square_int_img.resize(self.length, 0);
     }
 
-    fn compute_integral_images(&mut self, input: *const u8) {
+    fn compute_integral_images(&mut self, input: &[u8]) {
+        assert_eq!(input.len(), self.length);
+
         unsafe {
-            math::copy_u8_to_i32(input, self.int_img.as_mut_ptr(), self.length);
-            math::square(
-                &self.int_img[..self.length],
-                &mut self.square_int_img[..self.length],
-            );
+            math::copy_u8_to_i32(input, &mut self.int_img);
+            math::square(&self.int_img, &mut self.square_int_img);
 
             LabBoostedFeatureMap::compute_integral(
                 self.int_img.as_mut_ptr(),

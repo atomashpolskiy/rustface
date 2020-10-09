@@ -47,14 +47,14 @@ fn detect_single_image(c: &mut Criterion) {
 
     // convert to rustface internal image datastructure
     let (width, height) = img.dimensions();
-    let mut test_image = ImageData::new(img.as_ptr(), width, height);
 
     let target_runtime = Duration::new(100, 0);
 
     c.bench(
         "detect_single_image",
         Benchmark::new("detect", move |b| {
-            b.iter(|| detector.detect(&mut test_image))
+            let test_image = ImageData::new(&img, width, height);
+            b.iter(|| detector.detect(&test_image))
         })
         // Limit the measurement time and the sample size
         // to make sure the benchmark finishes in a feasible amount of time.

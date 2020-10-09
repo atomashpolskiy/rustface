@@ -53,7 +53,7 @@ pub trait Detector {
     /// Panics if `image` is not a legal image, e.g. it
     /// - is not gray-scale (`num_channels` is not equal to 1)
     /// - has `width` or `height` equal to 0
-    fn detect(&mut self, image: &mut ImageData) -> Vec<FaceInfo>;
+    fn detect(&mut self, image: &ImageData) -> Vec<FaceInfo>;
 
     /// Set the size of the sliding window.
     ///

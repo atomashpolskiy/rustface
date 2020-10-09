@@ -26,7 +26,7 @@ use crate::Detector;
 const FUST_MIN_WINDOW_SIZE: u32 = 20;
 
 impl Detector for FuStDetector {
-    fn detect(&mut self, image: &mut ImageData) -> Vec<FaceInfo> {
+    fn detect(&mut self, image: &ImageData) -> Vec<FaceInfo> {
         if !is_legal_image(image) {
             panic!("Illegal image: {:?}", image);
         }
@@ -162,7 +162,7 @@ impl FuStDetector {
             .resize((roi_width * roi_height) as usize, 0);
         let mut src;
         unsafe {
-            src = img.data().offset((roi.y() * img_width + roi.x()) as isize);
+            src = img.data().as_ptr().offset((roi.y() * img_width + roi.x()) as isize);
         }
         let mut dest = self.wnd_data_buf.as_mut_ptr();
         let len = roi_width as usize;
@@ -224,10 +224,10 @@ impl FuStDetector {
             }
         }
 
-        let src_img = ImageData::new(self.wnd_data_buf.as_ptr(), roi.width(), roi.height());
+        let src_img = ImageData::new(&self.wnd_data_buf, roi.width(), roi.height());
         resize_image(
             &src_img,
-            self.wnd_data.as_mut_ptr(),
+            &mut self.wnd_data,
             self.wnd_size,
             self.wnd_size,
         );
@@ -343,7 +343,7 @@ impl FuStDetector {
 
                             self.get_window_data(&image1x, bboxes[m].bbox_mut());
                             let img_temp = ImageData::new(
-                                self.wnd_data.as_ptr(),
+                                &self.wnd_data,
                                 self.wnd_size,
                                 self.wnd_size,
                             );

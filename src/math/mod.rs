@@ -16,9 +16,11 @@
 // You should have received a copy of the BSD 2-Clause License along with the software.
 // If not, see < https://opensource.org/licenses/BSD-2-Clause>.
 
-pub unsafe fn copy_u8_to_i32(src: *const u8, dest: *mut i32, length: usize) {
-    for i in 0..length as isize {
-        *dest.offset(i) = i32::from(*src.offset(i));
+#[inline]
+pub fn copy_u8_to_i32(src: &[u8], dest: &mut [i32]) {
+    let dest = &mut dest[0..src.len()]; // eliminates a branch from the loop
+    for (value, dest) in src.iter().copied().zip(dest.iter_mut()) {
+        *dest = i32::from(value);
     }
 }
 

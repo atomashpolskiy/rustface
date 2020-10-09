@@ -17,18 +17,19 @@
 // If not, see < https://opensource.org/licenses/BSD-2-Clause>.
 
 use std::cmp;
-use std::ptr;
 
 #[derive(Debug)]
-pub struct ImageData {
-    data: *const u8,
+pub struct ImageData<'a> {
+    data: &'a [u8],
     width: u32,
     height: u32,
     num_channels: u32,
 }
 
-impl ImageData {
-    pub fn new(data: *const u8, width: u32, height: u32) -> Self {
+impl<'a> ImageData<'a> {
+    #[inline]
+    pub fn new(data: &'a [u8], width: u32, height: u32) -> Self {
+        assert_eq!(data.len(), width as usize * height as usize);
         ImageData {
             data,
             width,
@@ -37,25 +38,23 @@ impl ImageData {
         }
     }
 
+    #[inline]
     pub fn width(&self) -> u32 {
         self.width
     }
 
+    #[inline]
     pub fn height(&self) -> u32 {
         self.height
     }
 
+    #[inline]
     pub fn num_channels(&self) -> u32 {
         self.num_channels
     }
 
-    fn copy_to(&self, dest: *mut u8) {
-        unsafe {
-            ptr::copy_nonoverlapping(self.data, dest, (self.width * self.height) as usize);
-        }
-    }
-
-    pub fn data(&self) -> *const u8 {
+    #[inline]
+    pub fn data(&self) -> &'a [u8] {
         self.data
     }
 }
@@ -70,8 +69,6 @@ pub struct ImagePyramid {
     width_scaled: u32,
     height_scaled: u32,
     img_buf: Vec<u8>,
-    img_buf_width: u32,
-    img_buf_height: u32,
     img_buf_scaled: Vec<u8>,
     img_buf_scaled_width: u32,
     img_buf_scaled_height: u32,
@@ -79,8 +76,6 @@ pub struct ImagePyramid {
 
 impl ImagePyramid {
     pub fn new() -> Self {
-        let img_buf_width: u32 = 2;
-        let img_buf_height: u32 = 2;
         let img_buf_scaled_width: u32 = 2;
         let img_buf_scaled_height: u32 = 2;
 
@@ -93,9 +88,7 @@ impl ImagePyramid {
             height1x: 0,
             width_scaled: 0,
             height_scaled: 0,
-            img_buf: Vec::with_capacity((img_buf_width * img_buf_height) as usize),
-            img_buf_width,
-            img_buf_height,
+            img_buf: Vec::new(),
             img_buf_scaled: Vec::with_capacity(
                 (img_buf_scaled_width * img_buf_scaled_height) as usize,
             ),
@@ -122,26 +115,15 @@ impl ImagePyramid {
     }
 
     pub fn get_image_1x(&self) -> ImageData {
-        ImageData::new(self.img_buf.as_ptr(), self.width1x, self.height1x)
+        ImageData::new(&self.img_buf, self.width1x, self.height1x)
     }
 
-    pub fn set_image_1x(&mut self, img_data: *const u8, width: u32, height: u32) {
-        if width > self.img_buf_width || height > self.img_buf_height {
-            self.img_buf_width = width;
-            self.img_buf_height = height;
-            self.img_buf = Vec::with_capacity((width * height) as usize);
-        }
-
+    pub fn set_image_1x(&mut self, img_data: &[u8], width: u32, height: u32) {
         self.width1x = width;
         self.height1x = height;
 
-        unsafe {
-            ptr::copy_nonoverlapping(
-                img_data,
-                self.img_buf.as_mut_ptr(),
-                (width * height) as usize,
-            );
-        }
+        self.img_buf.clear();
+        self.img_buf.extend_from_slice(img_data);
 
         self.scale_factor = self.max_scale;
         self.update_buf_scaled();
@@ -171,15 +153,15 @@ impl ImagePyramid {
         self.width_scaled = (self.width1x as f32 * self.scale_factor) as u32;
         self.height_scaled = (self.height1x as f32 * self.scale_factor) as u32;
 
-        let src = ImageData::new(self.img_buf.as_ptr(), self.width1x, self.height1x);
+        let src = ImageData::new(&self.img_buf, self.width1x, self.height1x);
         resize_image(
             &src,
-            self.img_buf_scaled.as_mut_ptr(),
+            &mut self.img_buf_scaled,
             self.width_scaled,
             self.height_scaled,
         );
         let img_scaled = Some(ImageData::new(
-            self.img_buf_scaled.as_ptr(),
+            &self.img_buf_scaled,
             self.width_scaled,
             self.height_scaled,
         ));
@@ -189,13 +171,22 @@ impl ImagePyramid {
     }
 }
 
-pub fn resize_image(src: &ImageData, dest: *mut u8, width: u32, height: u32) {
+pub fn resize_image(src: &ImageData, dest: &mut Vec<u8>, width: u32, height: u32) {
+    dest.clear();
+
     if src.width() == width && src.height() == height {
-        src.copy_to(dest);
+        dest.extend_from_slice(src.data());
         return;
     }
 
-    let src_data = src.data();
+    unsafe {
+        let area = width as usize * height as usize;
+        dest.reserve(area);
+        dest.set_len(area);
+    }
+
+    let dest = dest.as_mut_ptr();
+    let src_data = src.data().as_ptr();
 
     let lf_x_scl = f64::from(src.width()) / f64::from(width);
     let lf_y_scl = f64::from(src.height()) / f64::from(height);
