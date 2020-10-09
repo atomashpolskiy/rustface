@@ -48,7 +48,9 @@ impl FeatureMap for SurfMlpFeatureMap {
         }
 
         self.reshape(width, height);
-        self.compute_gradient_images(input);
+        unsafe {
+            self.compute_gradient_images(input);
+        }
         self.compute_integral_images();
     }
 
@@ -107,7 +109,7 @@ impl SurfMlpFeatureMap {
         self.img_buf.resize(self.length, 0);
     }
 
-    fn compute_gradient_images(&mut self, input: *const u8) {
+    unsafe fn compute_gradient_images(&mut self, input: *const u8) {
         math::copy_u8_to_i32(input, self.img_buf.as_mut_ptr(), self.length);
         self.compute_grad_x();
         self.compute_grad_y();
