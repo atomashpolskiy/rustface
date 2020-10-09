@@ -64,9 +64,10 @@ fn detect_single_image(c: &mut Criterion) {
 
 fn bench_square(c: &mut Criterion) {
     c.bench_function("math_square", |b| {
-        let mut vec = vec![1, 2, 3];
+        let src = vec![1, 2, 3];
+        let mut dest = vec![1, 2, 3];
         b.iter(|| {
-            unsafe { square(vec.as_ptr(), vec.as_mut_ptr() as *mut u32, vec.len()) };
+            square(&src, &mut dest);
         })
     });
 }
@@ -124,9 +125,9 @@ fn bench_square_compare(c: &mut Criterion) {
     });
 
     let notsafe = Fun::new("unsafe", |b, input: &Vec<i32>| {
-        let mut target: Vec<i32> = vec![0; input.len()];
+        let mut target: Vec<u32> = vec![0; input.len()];
         b.iter(|| {
-            unsafe { square(input.as_ptr(), target.as_mut_ptr() as *mut u32, input.len()) };
+            square(&input, &mut target[..input.len()]);
         })
     });
 

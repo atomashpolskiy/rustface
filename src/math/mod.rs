@@ -22,10 +22,9 @@ pub unsafe fn copy_u8_to_i32(src: *const u8, dest: *mut i32, length: usize) {
     }
 }
 
-pub unsafe fn square(src: *const i32, dest: *mut u32, length: usize) {
-    for i in 0..length as isize {
-        let value = *src.offset(i);
-        *dest.offset(i) = i32::pow(value, 2) as u32;
+pub fn square(src: &[i32], dest: &mut [u32]) {
+    for (value, dest) in src.iter().copied().zip(dest.iter_mut()) {
+        *dest = i32::pow(value, 2) as u32;
     }
 }
 
@@ -60,7 +59,7 @@ mod tests {
     #[test]
     fn test_square() {
         let mut vec = vec![1, 2, 3];
-        unsafe { square(vec.as_ptr(), vec.as_mut_ptr() as *mut u32, vec.len()) };
+        square(&[1, 2, 3], &mut vec);
         assert_eq!(vec![1, 4, 9], vec);
     }
 

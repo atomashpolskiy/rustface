@@ -164,9 +164,8 @@ impl LabBoostedFeatureMap {
         unsafe {
             math::copy_u8_to_i32(input, self.int_img.as_mut_ptr(), self.length);
             math::square(
-                self.int_img.as_ptr(),
-                self.square_int_img.as_mut_ptr(),
-                self.length,
+                &self.int_img[..self.length],
+                &mut self.square_int_img[..self.length],
             );
 
             LabBoostedFeatureMap::compute_integral(
