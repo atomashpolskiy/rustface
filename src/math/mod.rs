@@ -58,14 +58,8 @@ pub fn vector_sub(left: *const i32, right: *const i32, dest: *mut i32, length: u
     }
 }
 
-pub fn vector_inner_product(left: *const f32, right: *const f32, length: usize) -> f32 {
-    let mut product = 0.0;
-    unsafe {
-        for i in 0..length as isize {
-            product += (*left.offset(i)) * (*right.offset(i));
-        }
-    }
-    product
+pub fn vector_inner_product(left: &[f32], right: &[f32]) -> f32 {
+    left.iter().copied().zip(right.iter().copied()).map(|(l,r)| l * r).sum()
 }
 
 #[cfg(test)]
@@ -104,7 +98,7 @@ mod tests {
     #[test]
     fn test_vector_inner_product() {
         let vec = vec![1.0, 2.0, 3.0];
-        let result = vector_inner_product(vec.as_ptr(), vec.as_ptr(), vec.len());
+        let result = vector_inner_product(&vec, &vec);
         assert_eq!(14.0, result);
     }
 }
