@@ -178,8 +178,7 @@ impl Layer {
             .zip(&self.biases)
             .zip(output)
             .for_each(|((weights, bias), output)| {
-                let x = math::vector_inner_product(input.as_ptr(), weights.as_ptr(), self.input_dim)
-                    + bias;
+                let x = math::vector_inner_product(input, weights) + bias;
                 *output = (self.act_func)(x);
             });
     }

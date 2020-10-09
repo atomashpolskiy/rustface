@@ -102,7 +102,7 @@ fn bench_vector_inner_product(c: &mut Criterion) {
     c.bench_function("math_vector_inner_product", move |b| {
         let vec = vec![1.0, 2.0, 3.0];
         b.iter(|| {
-            vector_inner_product(vec.as_ptr(), vec.as_ptr(), vec.len());
+            vector_inner_product(&vec, &vec);
         })
     });
 }
