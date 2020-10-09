@@ -39,7 +39,7 @@ pub struct SurfMlpFeatureMap {
 }
 
 impl FeatureMap for SurfMlpFeatureMap {
-    fn compute(&mut self, input: *const u8, width: u32, height: u32) {
+    fn compute(&mut self, input: &[u8], width: u32, height: u32) {
         if width == 0 || height == 0 {
             panic!(format!(
                 "Illegal arguments: width ({}), height ({})",
@@ -48,9 +48,7 @@ impl FeatureMap for SurfMlpFeatureMap {
         }
 
         self.reshape(width, height);
-        unsafe {
-            self.compute_gradient_images(input);
-        }
+        self.compute_gradient_images(input);
         self.compute_integral_images();
     }
 
@@ -100,7 +98,7 @@ impl SurfMlpFeatureMap {
     fn reshape(&mut self, width: u32, height: u32) {
         self.width = width;
         self.height = height;
-        self.length = (width * height) as usize;
+        self.length = width as usize * height as usize;
 
         self.grad_x.resize(self.length, 0);
         self.grad_y.resize(self.length, 0);
@@ -109,8 +107,10 @@ impl SurfMlpFeatureMap {
         self.img_buf.resize(self.length, 0);
     }
 
-    unsafe fn compute_gradient_images(&mut self, input: *const u8) {
-        math::copy_u8_to_i32(input, self.img_buf.as_mut_ptr(), self.length);
+    fn compute_gradient_images(&mut self, input: &[u8]) {
+        assert_eq!(input.len(), self.length);
+
+        math::copy_u8_to_i32(input, &mut self.img_buf);
         self.compute_grad_x();
         self.compute_grad_y();
     }

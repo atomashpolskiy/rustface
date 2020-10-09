@@ -26,5 +26,5 @@ use crate::common::Rectangle;
 
 pub trait FeatureMap {
     fn set_roi(&mut self, roi: Rectangle);
-    fn compute(&mut self, input: *const u8, width: u32, height: u32);
+    fn compute(&mut self, input: &[u8], width: u32, height: u32);
 }
