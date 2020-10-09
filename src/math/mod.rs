@@ -16,45 +16,35 @@
 // You should have received a copy of the BSD 2-Clause License along with the software.
 // If not, see < https://opensource.org/licenses/BSD-2-Clause>.
 
-pub fn copy_u8_to_i32(src: *const u8, dest: *mut i32, length: usize) {
-    unsafe {
-        for i in 0..length as isize {
-            *dest.offset(i) = i32::from(*src.offset(i));
-        }
+pub unsafe fn copy_u8_to_i32(src: *const u8, dest: *mut i32, length: usize) {
+    for i in 0..length as isize {
+        *dest.offset(i) = i32::from(*src.offset(i));
     }
 }
 
-pub fn square(src: *const i32, dest: *mut u32, length: usize) {
-    unsafe {
-        for i in 0..length as isize {
-            let value = *src.offset(i);
-            *dest.offset(i) = i32::pow(value, 2) as u32;
-        }
+pub unsafe fn square(src: *const i32, dest: *mut u32, length: usize) {
+    for i in 0..length as isize {
+        let value = *src.offset(i);
+        *dest.offset(i) = i32::pow(value, 2) as u32;
     }
 }
 
-pub fn abs(src: *const i32, dest: *mut i32, length: usize) {
-    unsafe {
-        for i in 0..length as isize {
-            let value = *src.offset(i);
-            *dest.offset(i) = if value >= 0 { value } else { -value };
-        }
+pub unsafe fn abs(src: *const i32, dest: *mut i32, length: usize) {
+    for i in 0..length as isize {
+        let value = *src.offset(i);
+        *dest.offset(i) = if value >= 0 { value } else { -value };
     }
 }
 
-pub fn vector_add(left: *const i32, right: *const i32, dest: *mut i32, length: usize) {
-    unsafe {
-        for i in 0..length as isize {
-            *dest.offset(i) = *left.offset(i) + *right.offset(i);
-        }
+pub unsafe fn vector_add(left: *const i32, right: *const i32, dest: *mut i32, length: usize) {
+    for i in 0..length as isize {
+        *dest.offset(i) = *left.offset(i) + *right.offset(i);
     }
 }
 
-pub fn vector_sub(left: *const i32, right: *const i32, dest: *mut i32, length: usize) {
-    unsafe {
-        for i in 0..length as isize {
-            *dest.offset(i) = *left.offset(i) - *right.offset(i);
-        }
+pub unsafe fn vector_sub(left: *const i32, right: *const i32, dest: *mut i32, length: usize) {
+    for i in 0..length as isize {
+        *dest.offset(i) = *left.offset(i) - *right.offset(i);
     }
 }
 
@@ -70,28 +60,28 @@ mod tests {
     #[test]
     fn test_square() {
         let mut vec = vec![1, 2, 3];
-        square(vec.as_ptr(), vec.as_mut_ptr() as *mut u32, vec.len());
+        unsafe { square(vec.as_ptr(), vec.as_mut_ptr() as *mut u32, vec.len()) };
         assert_eq!(vec![1, 4, 9], vec);
     }
 
     #[test]
     fn test_abs() {
         let mut vec = vec![-1, 2, -3];
-        abs(vec.as_ptr(), vec.as_mut_ptr(), vec.len());
+        unsafe { abs(vec.as_ptr(), vec.as_mut_ptr(), vec.len()) };
         assert_eq!(vec![1, 2, 3], vec);
     }
 
     #[test]
     fn test_vector_add() {
         let mut vec = vec![1, 2, 3];
-        vector_add(vec.as_ptr(), vec.as_ptr(), vec.as_mut_ptr(), vec.len());
+        unsafe { vector_add(vec.as_ptr(), vec.as_ptr(), vec.as_mut_ptr(), vec.len()) };
         assert_eq!(vec![2, 4, 6], vec);
     }
 
     #[test]
     fn test_vector_sub() {
         let mut vec = vec![1, 2, 3];
-        vector_sub(vec.as_ptr(), vec.as_ptr(), vec.as_mut_ptr(), vec.len());
+        unsafe { vector_sub(vec.as_ptr(), vec.as_ptr(), vec.as_mut_ptr(), vec.len()) };
         assert_eq!(vec![0, 0, 0], vec);
     }
 

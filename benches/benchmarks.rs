@@ -66,7 +66,7 @@ fn bench_square(c: &mut Criterion) {
     c.bench_function("math_square", |b| {
         let mut vec = vec![1, 2, 3];
         b.iter(|| {
-            square(vec.as_ptr(), vec.as_mut_ptr() as *mut u32, vec.len());
+            unsafe { square(vec.as_ptr(), vec.as_mut_ptr() as *mut u32, vec.len()) };
         })
     });
 }
@@ -75,7 +75,7 @@ fn bench_abs(c: &mut Criterion) {
     c.bench_function("math_abs", move |b| {
         let mut vec = vec![-1, 2, -3];
         b.iter(|| {
-            abs(vec.as_ptr(), vec.as_mut_ptr(), vec.len());
+            unsafe { abs(vec.as_ptr(), vec.as_mut_ptr(), vec.len()) };
         })
     });
 }
@@ -84,7 +84,7 @@ fn bench_vector_add(c: &mut Criterion) {
     c.bench_function("math_vector_add", move |b| {
         let mut vec = vec![1, 2, 3];
         b.iter(|| {
-            vector_add(vec.as_ptr(), vec.as_ptr(), vec.as_mut_ptr(), vec.len());
+            unsafe { vector_add(vec.as_ptr(), vec.as_ptr(), vec.as_mut_ptr(), vec.len()) };
         })
     });
 }
@@ -93,7 +93,7 @@ fn bench_vector_sub(c: &mut Criterion) {
     c.bench_function("math_vector_sub", move |b| {
         let mut vec = vec![1, 2, 3];
         b.iter(|| {
-            vector_sub(vec.as_ptr(), vec.as_ptr(), vec.as_mut_ptr(), vec.len());
+            unsafe { vector_sub(vec.as_ptr(), vec.as_ptr(), vec.as_mut_ptr(), vec.len()) };
         })
     });
 }
@@ -126,7 +126,7 @@ fn bench_square_compare(c: &mut Criterion) {
     let notsafe = Fun::new("unsafe", |b, input: &Vec<i32>| {
         let mut target: Vec<i32> = vec![0; input.len()];
         b.iter(|| {
-            square(input.as_ptr(), target.as_mut_ptr() as *mut u32, input.len());
+            unsafe { square(input.as_ptr(), target.as_mut_ptr() as *mut u32, input.len()) };
         })
     });
 
@@ -160,7 +160,7 @@ fn bench_abs_compare(c: &mut Criterion) {
     let notsafe = Fun::new("unsafe", |b, input: &Vec<i32>| {
         let mut target: Vec<i32> = vec![0; input.len()];
         b.iter(|| {
-            abs(input.as_ptr(), target.as_mut_ptr(), input.len());
+            unsafe { abs(input.as_ptr(), target.as_mut_ptr(), input.len()) };
         })
     });
 
