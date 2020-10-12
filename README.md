@@ -45,9 +45,7 @@ SeetaFace Detection is an implementation of Funnel-Structured cascade, which is 
 
 ## Performance
 
-We want the current master branch to be covered by stability guarantees, so we have moved the code that relies on unstable explicit SIMD intrinsics to the `nightly` branch. 
-
-Benchmarks for the `master` branch are coming soon.
+You can run the criterion benchmarks using `cargo bench`.
 
 ### Using nightly Rust
 
