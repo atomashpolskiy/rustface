@@ -63,9 +63,9 @@ fn detect_single_image(c: &mut Criterion) {
 }
 
 fn bench_square(c: &mut Criterion) {
-    c.bench_function("math_square", |b| {
-        let src = vec![1, 2, 3];
-        let mut dest = vec![1, 2, 3];
+    c.bench_function("math_square 500", |b| {
+        let src: Vec<_> = (0..500).map(|i| i).collect();
+        let mut dest = vec![0; 500];
         b.iter(|| {
             square(&src, &mut dest);
         })
@@ -73,26 +73,37 @@ fn bench_square(c: &mut Criterion) {
 }
 
 fn bench_abs(c: &mut Criterion) {
-    c.bench_function("math_abs", move |b| {
-        let mut vec = vec![-1, 2, -3];
+    c.bench_function("math_abs 500", move |b| {
+        let vec: Vec<_> = (0..500).map(|i| if i%3==0 {i} else {-i}).collect();
+        let mut dest = vec![0; 500];
         b.iter(|| {
-            unsafe { abs(vec.as_ptr(), vec.as_mut_ptr(), vec.len()) };
+            unsafe { abs(vec.as_ptr(), dest.as_mut_ptr(), vec.len()) };
         })
     });
 }
 
-fn bench_vector_add(c: &mut Criterion) {
-    c.bench_function("math_vector_add", move |b| {
-        let mut vec = vec![1, 2, 3];
+fn bench_vector_add_dest(c: &mut Criterion) {
+    c.bench_function("math_vector_add dest", move |b| {
+        let src: Vec<_> = (0..500).map(|i| i).collect();
+        let mut dest = vec![0; 500];
+        b.iter(|| {
+            unsafe { vector_add(src.as_ptr(), src.as_ptr(), dest.as_mut_ptr(), src.len()) };
+        })
+    });
+}
+
+fn bench_vector_add_inplace(c: &mut Criterion) {
+    c.bench_function("math_vector_add in-place", move |b| {
+        let mut vec: Vec<_> = (0..500).map(|i| i).collect();
         b.iter(|| {
             unsafe { vector_add(vec.as_ptr(), vec.as_ptr(), vec.as_mut_ptr(), vec.len()) };
         })
     });
 }
 
-fn bench_vector_sub(c: &mut Criterion) {
-    c.bench_function("math_vector_sub", move |b| {
-        let mut vec = vec![1, 2, 3];
+fn bench_vector_sub_inplace(c: &mut Criterion) {
+    c.bench_function("math_vector_sub in-place", move |b| {
+        let mut vec: Vec<_> = (0..500).map(|i| i).collect();
         b.iter(|| {
             unsafe { vector_sub(vec.as_ptr(), vec.as_ptr(), vec.as_mut_ptr(), vec.len()) };
         })
@@ -100,8 +111,8 @@ fn bench_vector_sub(c: &mut Criterion) {
 }
 
 fn bench_vector_inner_product(c: &mut Criterion) {
-    c.bench_function("math_vector_inner_product", move |b| {
-        let vec = vec![1.0, 2.0, 3.0];
+    c.bench_function("math_vector_inner_product 500", move |b| {
+        let vec: Vec<_> = (0..500).map(|i| i as f32).collect();
         b.iter(|| {
             vector_inner_product(&vec, &vec);
         })
@@ -181,8 +192,9 @@ criterion_group!(
     math,
     bench_square,
     bench_abs,
-    bench_vector_add,
-    bench_vector_sub,
+    bench_vector_add_dest,
+    bench_vector_add_inplace,
+    bench_vector_sub_inplace,
     bench_vector_inner_product
 );
 criterion_group!(math_compare, bench_square_compare, bench_abs_compare);
