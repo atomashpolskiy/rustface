@@ -34,15 +34,6 @@ pub struct Model {
 }
 
 impl Model {
-    fn new() -> Self {
-        Model {
-            classifiers: vec![],
-            wnd_src_id: vec![],
-            hierarchy_sizes: vec![],
-            num_stages: vec![],
-        }
-    }
-
     pub fn get_classifiers(&mut self) -> &mut Vec<Box<dyn Classifier>> {
         &mut self.classifiers
     }
@@ -90,17 +81,19 @@ impl<R: io::Read> ModelReader<R> {
     }
 
     pub fn read(mut self) -> Result<Model, io::Error> {
-        let mut model: Model = Model::new();
-
         let num_hierarchy = self.read_i32()? as usize;
+        let mut classifiers = Vec::new();
+        let mut hierarchy_sizes = Vec::with_capacity(num_hierarchy);
+        let mut num_stages = Vec::new();
+        let mut wnd_src_id = Vec::new();
 
         for _ in 0..num_hierarchy {
             let hierarchy_size = self.read_i32()?;
-            model.hierarchy_sizes.push(hierarchy_size);
+            hierarchy_sizes.push(hierarchy_size);
 
             for _ in 0..hierarchy_size {
                 let num_stage = self.read_i32()?;
-                model.num_stages.push(num_stage);
+                num_stages.push(num_stage);
 
                 for _ in 0..num_stage {
                     let classifier_kind_id = self.read_i32()?;
@@ -108,9 +101,7 @@ impl<R: io::Read> ModelReader<R> {
 
                     match classifier_kind {
                         Some(ref classifier_kind) => {
-                            model
-                                .classifiers
-                                .push(self.create_classifier(classifier_kind)?);
+                            classifiers.push(self.create_classifier(classifier_kind)?);
                         }
                         None => panic!("Unexpected classifier kind id: {}", classifier_kind_id),
                     };
@@ -126,11 +117,16 @@ impl<R: io::Read> ModelReader<R> {
                 } else {
                     num_wnd_vec = vec![];
                 }
-                model.wnd_src_id.push(num_wnd_vec);
+                wnd_src_id.push(num_wnd_vec);
             }
         }
 
-        Ok(model)
+        Ok(Model {
+            classifiers,
+            wnd_src_id,
+            hierarchy_sizes,
+            num_stages,
+        })
     }
 
     fn create_classifier(
