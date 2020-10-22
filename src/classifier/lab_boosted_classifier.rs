@@ -62,19 +62,17 @@ impl Classifier for LabBoostedClassifier {
         let mut score = 0.0;
 
         let mut i = 0;
+        let feature_map = self.feature_map.borrow();
         while positive && i < self.base_classifiers.len() {
             for _ in 0..K_FEAT_GROUP_SIZE {
                 let (offset_x, offset_y) = self.features[i];
-                let feature_val = self
-                    .feature_map
-                    .borrow()
-                    .get_feature_val(offset_x, offset_y);
+                let feature_val = feature_map.get_feature_val(offset_x, offset_y);
                 score += self.base_classifiers[i].weights[feature_val as usize];
                 i += 1;
             }
             positive = score >= self.base_classifiers[i - 1].thresh;
         }
-        positive = positive && ((*self.feature_map).borrow().get_std_dev() > K_STDDEV_THRESH);
+        positive = positive && (feature_map.get_std_dev() > K_STDDEV_THRESH);
 
         Score { positive, score }
     }
