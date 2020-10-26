@@ -27,14 +27,14 @@ use crate::feat::{LabBoostedFeatureMap, SurfMlpFeatureMap};
 use byteorder::{LittleEndian, ReadBytesExt};
 
 pub struct Model {
-    classifiers: Vec<Box<Classifier>>,
+    classifiers: Vec<Classifier>,
     wnd_src_id: Vec<Vec<i32>>,
     hierarchy_sizes: Vec<i32>,
     num_stages: Vec<i32>,
 }
 
 impl Model {
-    pub fn get_classifiers(&mut self) -> &mut Vec<Box<Classifier>> {
+    pub fn get_classifiers(&mut self) -> &mut Vec<Classifier> {
         &mut self.classifiers
     }
 
@@ -132,18 +132,18 @@ impl<R: io::Read> ModelReader<R> {
     fn create_classifier(
         &mut self,
         classifier_kind: &ClassifierKind,
-    ) -> Result<Box<Classifier>, io::Error> {
+    ) -> Result<Classifier, io::Error> {
         match *classifier_kind {
             ClassifierKind::LabBoosted => {
                 let mut classifier =
                     LabBoostedClassifier::new(Rc::clone(&self.lab_boosted_feature_map));
                 self.read_lab_boosted_model(&mut classifier)?;
-                Ok(Box::new(Classifier::LabBoosted(classifier)))
+                Ok(Classifier::LabBoosted(classifier))
             }
             ClassifierKind::SurfMlp => {
                 let mut classifier = SurfMlpClassifier::new(Rc::clone(&self.surf_mlp_feature_map));
                 self.read_surf_mlp_model(&mut classifier)?;
-                Ok(Box::new(Classifier::SurfMlp(classifier)))
+                Ok(Classifier::SurfMlp(classifier))
             }
         }
     }
