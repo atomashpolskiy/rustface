@@ -20,7 +20,7 @@ use std::rc::Rc;
 
 use crate::math;
 
-use super::{Classifier, Score};
+use super::Score;
 use crate::common::{ImageData, Rectangle};
 use crate::feat::{FeatureMap, SurfMlpFeatureMap};
 use std::cell::RefCell;
@@ -192,8 +192,8 @@ impl Layer {
     }
 }
 
-impl Classifier for SurfMlpClassifier {
-    fn classify(&mut self, output: Option<&mut Vec<f32>>) -> Score {
+impl SurfMlpClassifier {
+    pub fn classify(&mut self, output: Option<&mut Vec<f32>>) -> Score {
         if self.input_buf.is_none() {
             let input_layer = self.layers.get(0).expect("No layers");
             self.input_buf = Some(vec![0.0; input_layer.input_size()]);
@@ -234,13 +234,13 @@ impl Classifier for SurfMlpClassifier {
         score
     }
 
-    fn compute(&mut self, image: &ImageData) {
+    pub fn compute(&mut self, image: &ImageData) {
         (*self.feature_map)
             .borrow_mut()
             .compute(image.data(), image.width(), image.height());
     }
 
-    fn set_roi(&mut self, roi: Rectangle) {
+    pub fn set_roi(&mut self, roi: Rectangle) {
         (*self.feature_map).borrow_mut().set_roi(roi);
     }
 }
