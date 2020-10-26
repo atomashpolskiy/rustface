@@ -132,7 +132,7 @@ impl SurfMlpClassifier {
         1.0 / (1.0 + (-x).exp())
     }
 
-    fn compute(&mut self) {
+    fn compute_internal(&mut self) {
         let input = self.input_buf.as_ref().unwrap();
         let output = self.output_buf.as_mut().unwrap();
 
@@ -217,7 +217,7 @@ impl Classifier for SurfMlpClassifier {
             }
         }
 
-        self.compute();
+        self.compute_internal();
 
         let output_buf = self.output_buf.as_ref().unwrap();
         let score = *output_buf.get(0).expect("No score");
