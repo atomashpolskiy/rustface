@@ -283,7 +283,10 @@ impl SurfMlpFeatureMap {
         }
     }
 
-    unsafe fn compute_feature_vector(&self, feature: &Feature, feature_vec: *mut i32) {
+    unsafe fn compute_feature_vector(&mut self, feature_id: usize) {
+        let feature = self.feature_pool.get_feature(feature_id);
+        let feature_vec = self.feature_vectors[feature_id].as_mut_ptr();
+
         let roi = self.roi.as_ref().unwrap();
         let init_cell_x = roi.x() + feature.patch.x();
         let init_cell_y = roi.y() + feature.patch.y();
@@ -452,15 +455,12 @@ impl SurfMlpFeatureMap {
     }
 
     pub unsafe fn get_feature_vector(&mut self, feature_id: usize, feature_vec: *mut f32) {
-        {
-            let feature = self.feature_pool.get_feature(feature_id);
-            let feature_vec = self.feature_vectors[feature_id].as_mut_ptr();
-            self.compute_feature_vector(feature, feature_vec);
+        self.compute_feature_vector(feature_id);
 
-            let feature_vec = self.feature_vectors[feature_id].as_slice();
-            let feature_vec_normalized = self.feature_vectors_normalized[feature_id].as_mut_slice();
-            SurfMlpFeatureMap::normalize_feature_vector(feature_vec, feature_vec_normalized);
-        }
+        SurfMlpFeatureMap::normalize_feature_vector(
+            &self.feature_vectors[feature_id],
+            &mut self.feature_vectors_normalized[feature_id]
+        );
 
         let feature_vec_normalized = self.feature_vectors_normalized[feature_id].as_ptr();
         let length = self.feature_vectors_normalized[feature_id].len();
