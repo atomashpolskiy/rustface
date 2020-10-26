@@ -227,13 +227,8 @@ impl Classifier for SurfMlpClassifier {
         };
 
         if let Some(output) = output {
-            unsafe {
-                ptr::copy_nonoverlapping(
-                    output_buf.as_ptr(),
-                    output.as_mut_ptr(),
-                    output_buf.len(),
-                );
-            }
+            output.clear();
+            output.extend_from_slice(&output_buf);
         }
 
         score
