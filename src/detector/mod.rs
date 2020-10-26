@@ -248,7 +248,7 @@ impl FuStDetector {
         }
 
         while let Some(ref image_scaled) = image.get_next_scale_image(&mut scale_factor) {
-            self.model.get_classifiers()[0].compute(image_scaled);
+            self.model.feature_map_for_classifier(0).compute(image_scaled);
 
             let width = (self.wnd_size as f32 / scale_factor + 0.5) as u32;
             wnd_info.bbox_mut().set_width(width);
@@ -261,7 +261,7 @@ impl FuStDetector {
 
             for y in Seq::new(0, move |n| n + step_y).take_while(move |n| *n <= max_y) {
                 for x in Seq::new(0, move |n| n + step_x).take_while(move |n| *n <= max_x) {
-                    self.model.get_classifiers()[0].set_roi(Rectangle::new(
+                    self.model.feature_map_for_classifier(0).set_roi(Rectangle::new(
                         x as i32,
                         y as i32,
                         self.wnd_size,
@@ -275,14 +275,8 @@ impl FuStDetector {
                         .bbox_mut()
                         .set_y((y as f32 / scale_factor + 0.5) as i32);
 
-                    for (classifier, proposal) in self
-                        .model
-                        .get_classifiers()
-                        .iter_mut()
-                        .zip(proposals.iter_mut())
-                        .take(first_hierarchy_size)
-                    {
-                        let score = classifier.classify(None);
+                    for (n, proposal) in proposals.iter_mut().enumerate().take(first_hierarchy_size) {
+                        let score = self.model.classify_with_classifier(n, None);
                         if score.is_positive() {
                             wnd_info.set_score(f64::from(score.score()));
                             proposal.push(wnd_info.clone());
@@ -347,16 +341,15 @@ impl FuStDetector {
                                 self.wnd_size,
                                 self.wnd_size,
                             );
-                            self.model.get_classifiers()[model_idx].compute(&img_temp);
-                            self.model.get_classifiers()[model_idx].set_roi(Rectangle::new(
+                            self.model.feature_map_for_classifier(model_idx).compute(&img_temp);
+                            self.model.feature_map_for_classifier(model_idx).set_roi(Rectangle::new(
                                 0,
                                 0,
                                 self.wnd_size,
                                 self.wnd_size,
                             ));
 
-                            let new_score = self.model.get_classifiers()[model_idx]
-                                .classify(Some(&mut mlp_predicts));
+                            let new_score = self.model.classify_with_classifier(model_idx, Some(&mut mlp_predicts));
                             if new_score.is_positive() {
                                 let x = bboxes[m].bbox().x() as f32;
                                 let y = bboxes[m].bbox().y() as f32;

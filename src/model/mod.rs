@@ -16,14 +16,13 @@
 // You should have received a copy of the BSD 2-Clause License along with the software.
 // If not, see < https://opensource.org/licenses/BSD-2-Clause>.
 
-use std::cell::RefCell;
+use crate::classifier::Score;
 use std::fs::File;
 use std::io::BufReader;
 use std::io;
-use std::rc::Rc;
 
 use crate::classifier::{Classifier, ClassifierKind, LabBoostedClassifier, SurfMlpClassifier};
-use crate::feat::{LabBoostedFeatureMap, SurfMlpFeatureMap};
+use crate::feat::{FeatureMap, LabBoostedFeatureMap, SurfMlpFeatureMap};
 use byteorder::{LittleEndian, ReadBytesExt};
 
 pub struct Model {
@@ -31,11 +30,27 @@ pub struct Model {
     wnd_src_id: Vec<Vec<i32>>,
     hierarchy_sizes: Vec<i32>,
     num_stages: Vec<i32>,
+    lab_boosted_feature_map: LabBoostedFeatureMap,
+    surf_mlp_feature_map: SurfMlpFeatureMap,
 }
 
 impl Model {
     pub fn get_classifiers(&mut self) -> &mut Vec<Classifier> {
         &mut self.classifiers
+    }
+
+    pub fn feature_map_for_classifier(&mut self, index: usize) -> &mut dyn FeatureMap {
+        match self.classifiers[index] {
+            Classifier::LabBoosted(_) => &mut self.lab_boosted_feature_map,
+            Classifier::SurfMlp(_) => &mut self.surf_mlp_feature_map,
+        }
+    }
+
+    pub fn classify_with_classifier(&mut self, index: usize, output: Option<&mut Vec<f32>>) -> Score {
+        match self.classifiers[index] {
+            Classifier::SurfMlp(ref mut c) => c.classify(output, &mut self.surf_mlp_feature_map),
+            Classifier::LabBoosted(ref mut c) => c.classify(&mut self.lab_boosted_feature_map),
+        }
     }
 
     pub fn get_wnd_src(&self, id: usize) -> &Vec<i32> {
@@ -67,16 +82,12 @@ pub fn read_model<R: io::Read>(buf: R) -> Result<Model, io::Error> {
 
 struct ModelReader<R: io::Read> {
     reader: R,
-    lab_boosted_feature_map: Rc<RefCell<LabBoostedFeatureMap>>,
-    surf_mlp_feature_map: Rc<RefCell<SurfMlpFeatureMap>>,
 }
 
 impl<R: io::Read> ModelReader<R> {
     fn new(reader: R) -> Self {
         ModelReader {
             reader,
-            lab_boosted_feature_map: Rc::new(RefCell::new(LabBoostedFeatureMap::new())),
-            surf_mlp_feature_map: Rc::new(RefCell::new(SurfMlpFeatureMap::new())),
         }
     }
 
@@ -122,6 +133,8 @@ impl<R: io::Read> ModelReader<R> {
         }
 
         Ok(Model {
+            lab_boosted_feature_map: LabBoostedFeatureMap::new(),
+            surf_mlp_feature_map: SurfMlpFeatureMap::new(),
             classifiers,
             wnd_src_id,
             hierarchy_sizes,
@@ -135,13 +148,12 @@ impl<R: io::Read> ModelReader<R> {
     ) -> Result<Classifier, io::Error> {
         match *classifier_kind {
             ClassifierKind::LabBoosted => {
-                let mut classifier =
-                    LabBoostedClassifier::new(Rc::clone(&self.lab_boosted_feature_map));
+                let mut classifier = LabBoostedClassifier::new();
                 self.read_lab_boosted_model(&mut classifier)?;
                 Ok(Classifier::LabBoosted(classifier))
             }
             ClassifierKind::SurfMlp => {
-                let mut classifier = SurfMlpClassifier::new(Rc::clone(&self.surf_mlp_feature_map));
+                let mut classifier = SurfMlpClassifier::new();
                 self.read_surf_mlp_model(&mut classifier)?;
                 Ok(Classifier::SurfMlp(classifier))
             }

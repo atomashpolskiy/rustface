@@ -16,14 +16,9 @@
 // You should have received a copy of the BSD 2-Clause License along with the software.
 // If not, see < https://opensource.org/licenses/BSD-2-Clause>.
 
-use std::rc::Rc;
-
 use crate::math;
-
 use super::Score;
-use crate::common::{ImageData, Rectangle};
-use crate::feat::{FeatureMap, SurfMlpFeatureMap};
-use std::cell::RefCell;
+use crate::feat::SurfMlpFeatureMap;
 use std::ptr;
 
 #[cfg(feature = "rayon")]
@@ -58,7 +53,6 @@ impl TwoWayBuffer {
 }
 
 pub struct SurfMlpClassifier {
-    feature_map: Rc<RefCell<SurfMlpFeatureMap>>,
     feature_ids: Vec<i32>,
     thresh: f32,
     layers: Vec<Layer>,
@@ -68,9 +62,8 @@ pub struct SurfMlpClassifier {
 }
 
 impl SurfMlpClassifier {
-    pub fn new(feature_map: Rc<RefCell<SurfMlpFeatureMap>>) -> Self {
+    pub fn new() -> Self {
         SurfMlpClassifier {
-            feature_map,
             feature_ids: vec![],
             thresh: 0.0,
             layers: vec![],
@@ -193,7 +186,7 @@ impl Layer {
 }
 
 impl SurfMlpClassifier {
-    pub fn classify(&mut self, output: Option<&mut Vec<f32>>) -> Score {
+    pub fn classify(&mut self, output: Option<&mut Vec<f32>>, feature_map: &mut SurfMlpFeatureMap) -> Score {
         if self.input_buf.is_none() {
             let input_layer = self.layers.get(0).expect("No layers");
             self.input_buf = Some(vec![0.0; input_layer.input_size()]);
@@ -207,7 +200,6 @@ impl SurfMlpClassifier {
         {
             let input_buf = self.input_buf.as_mut().unwrap();
             let mut dest = input_buf.as_mut_ptr();
-            let mut feature_map = (*self.feature_map).borrow_mut();
             unsafe {
                 for &feature_id in &self.feature_ids[..] {
                     feature_map.get_feature_vector((feature_id - 1) as usize, dest);
@@ -234,11 +226,4 @@ impl SurfMlpClassifier {
         score
     }
 
-    pub fn compute(&mut self, image: &ImageData) {
-        self.feature_map.borrow_mut().compute(image);
-    }
-
-    pub fn set_roi(&mut self, roi: Rectangle) {
-        self.feature_map.borrow_mut().set_roi(roi);
-    }
 }
