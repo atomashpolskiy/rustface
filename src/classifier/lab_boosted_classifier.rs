@@ -19,7 +19,7 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use super::{Classifier, Score};
+use super::Score;
 use crate::common::{ImageData, Rectangle};
 use crate::feat::{FeatureMap, LabBoostedFeatureMap};
 
@@ -56,8 +56,8 @@ impl LabBoostedClassifier {
 const K_FEAT_GROUP_SIZE: usize = 10;
 const K_STDDEV_THRESH: f64 = 10.0;
 
-impl Classifier for LabBoostedClassifier {
-    fn classify(&mut self, _: Option<&mut Vec<f32>>) -> Score {
+impl LabBoostedClassifier {
+    pub fn classify(&mut self) -> Score {
         let mut positive = true;
         let mut score = 0.0;
 
@@ -77,13 +77,13 @@ impl Classifier for LabBoostedClassifier {
         Score { positive, score }
     }
 
-    fn compute(&mut self, image: &ImageData) {
+    pub fn compute(&mut self, image: &ImageData) {
         self.feature_map
             .borrow_mut()
             .compute(image.data(), image.width(), image.height());
     }
 
-    fn set_roi(&mut self, roi: Rectangle) {
+    pub fn set_roi(&mut self, roi: Rectangle) {
         self.feature_map.borrow_mut().set_roi(roi);
     }
 }

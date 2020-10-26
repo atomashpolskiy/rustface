@@ -55,8 +55,30 @@ impl Score {
     }
 }
 
-pub trait Classifier {
-    fn compute(&mut self, image: &ImageData);
-    fn set_roi(&mut self, roi: Rectangle);
-    fn classify(&mut self, output: Option<&mut Vec<f32>>) -> Score;
+pub enum Classifier {
+    SurfMlp(SurfMlpClassifier),
+    LabBoosted(LabBoostedClassifier),
+}
+
+impl Classifier {
+    pub fn compute(&mut self, image: &ImageData) {
+        match self {
+            Self::SurfMlp(c) => c.compute(image),
+            Self::LabBoosted(c) => c.compute(image),
+        }
+    }
+
+    pub fn set_roi(&mut self, roi: Rectangle) {
+        match self {
+            Self::SurfMlp(c) => c.set_roi(roi),
+            Self::LabBoosted(c) => c.set_roi(roi),
+        }
+    }
+
+    pub fn classify(&mut self, output: Option<&mut Vec<f32>>) -> Score {
+        match self {
+            Self::SurfMlp(c) => c.classify(output),
+            Self::LabBoosted(c) => c.classify(),
+        }
+    }
 }
