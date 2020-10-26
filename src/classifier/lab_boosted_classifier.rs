@@ -16,15 +16,10 @@
 // You should have received a copy of the BSD 2-Clause License along with the software.
 // If not, see < https://opensource.org/licenses/BSD-2-Clause>.
 
-use std::cell::RefCell;
-use std::rc::Rc;
-
 use super::Score;
-use crate::common::{ImageData, Rectangle};
-use crate::feat::{FeatureMap, LabBoostedFeatureMap};
+use crate::feat::LabBoostedFeatureMap;
 
 pub struct LabBoostedClassifier {
-    feature_map: Rc<RefCell<LabBoostedFeatureMap>>,
     features: Vec<(i32, i32)>,
     base_classifiers: Vec<BaseClassifier>,
 }
@@ -35,9 +30,8 @@ struct BaseClassifier {
 }
 
 impl LabBoostedClassifier {
-    pub fn new(feature_map: Rc<RefCell<LabBoostedFeatureMap>>) -> Self {
+    pub fn new() -> Self {
         LabBoostedClassifier {
-            feature_map,
             features: vec![],
             base_classifiers: vec![],
         }
@@ -57,12 +51,11 @@ const K_FEAT_GROUP_SIZE: usize = 10;
 const K_STDDEV_THRESH: f64 = 10.0;
 
 impl LabBoostedClassifier {
-    pub fn classify(&mut self) -> Score {
+    pub fn classify(&self, feature_map: &LabBoostedFeatureMap) -> Score {
         let mut positive = true;
         let mut score = 0.0;
 
         let mut i = 0;
-        let feature_map = self.feature_map.borrow();
         while positive && i < self.base_classifiers.len() {
             for _ in 0..K_FEAT_GROUP_SIZE {
                 let (offset_x, offset_y) = self.features[i];
@@ -75,13 +68,5 @@ impl LabBoostedClassifier {
         positive = positive && (feature_map.get_std_dev() > K_STDDEV_THRESH);
 
         Score { positive, score }
-    }
-
-    pub fn compute(&mut self, image: &ImageData) {
-        self.feature_map.borrow_mut().compute(image);
-    }
-
-    pub fn set_roi(&mut self, roi: Rectangle) {
-        self.feature_map.borrow_mut().set_roi(roi);
     }
 }

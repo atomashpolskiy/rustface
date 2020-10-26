@@ -22,8 +22,6 @@ mod surf_mlp_classifier;
 pub use self::lab_boosted_classifier::LabBoostedClassifier;
 pub use self::surf_mlp_classifier::SurfMlpClassifier;
 
-use crate::common::{ImageData, Rectangle};
-
 #[derive(Debug, Hash, PartialEq, Eq, Clone)]
 pub enum ClassifierKind {
     LabBoosted,
@@ -58,27 +56,4 @@ impl Score {
 pub enum Classifier {
     SurfMlp(SurfMlpClassifier),
     LabBoosted(LabBoostedClassifier),
-}
-
-impl Classifier {
-    pub fn compute(&mut self, image: &ImageData) {
-        match self {
-            Self::SurfMlp(c) => c.compute(image),
-            Self::LabBoosted(c) => c.compute(image),
-        }
-    }
-
-    pub fn set_roi(&mut self, roi: Rectangle) {
-        match self {
-            Self::SurfMlp(c) => c.set_roi(roi),
-            Self::LabBoosted(c) => c.set_roi(roi),
-        }
-    }
-
-    pub fn classify(&mut self, output: Option<&mut Vec<f32>>) -> Score {
-        match self {
-            Self::SurfMlp(c) => c.classify(output),
-            Self::LabBoosted(c) => c.classify(),
-        }
-    }
 }
