@@ -16,6 +16,7 @@
 // You should have received a copy of the BSD 2-Clause License along with the software.
 // If not, see < https://opensource.org/licenses/BSD-2-Clause>.
 
+use crate::ImageData;
 use num;
 use num::integer::Integer;
 use num::traits::WrappingAdd;
@@ -39,7 +40,11 @@ pub struct LabBoostedFeatureMap {
 }
 
 impl FeatureMap for LabBoostedFeatureMap {
-    fn compute(&mut self, input: &[u8], width: u32, height: u32) {
+    fn compute(&mut self, image: &ImageData) {
+        let input = image.data();
+        let width = image.width();
+        let height = image.height();
+
         if width == 0 || height == 0 {
             panic!(format!(
                 "Illegal arguments: width ({}), height ({})",

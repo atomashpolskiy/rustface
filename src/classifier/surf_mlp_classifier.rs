@@ -235,12 +235,10 @@ impl SurfMlpClassifier {
     }
 
     pub fn compute(&mut self, image: &ImageData) {
-        (*self.feature_map)
-            .borrow_mut()
-            .compute(image.data(), image.width(), image.height());
+        self.feature_map.borrow_mut().compute(image);
     }
 
     pub fn set_roi(&mut self, roi: Rectangle) {
-        (*self.feature_map).borrow_mut().set_roi(roi);
+        self.feature_map.borrow_mut().set_roi(roi);
     }
 }
