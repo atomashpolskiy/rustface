@@ -25,6 +25,7 @@ pub mod model;
 
 pub use crate::common::FaceInfo;
 pub use crate::common::ImageData;
+pub use crate::common::Rectangle;
 pub use crate::model::{load_model, read_model, Model};
 
 use crate::detector::FuStDetector;
