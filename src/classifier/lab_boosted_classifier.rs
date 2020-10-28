@@ -35,8 +35,8 @@ impl LabBoostedClassifier {
     #[inline]
     pub fn new() -> Self {
         LabBoostedClassifier {
-            features: vec![],
-            base_classifiers: vec![],
+            features: Vec::new(),
+            base_classifiers: Vec::new(),
         }
     }
 

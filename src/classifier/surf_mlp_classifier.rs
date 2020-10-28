@@ -33,8 +33,8 @@ impl TwoWayBuffer {
     #[inline]
     fn new() -> Self {
         TwoWayBuffer {
-            input: vec![],
-            output: vec![],
+            input: Vec::new(),
+            output: Vec::new(),
         }
     }
 
@@ -84,9 +84,9 @@ impl SurfMlpClassifier {
     #[inline]
     pub fn new() -> Self {
         SurfMlpClassifier {
-            feature_ids: vec![],
+            feature_ids: Vec::new(),
             thresh: 0.0,
-            layers: vec![],
+            layers: Vec::new(),
         }
     }
 

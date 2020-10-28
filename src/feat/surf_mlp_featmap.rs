@@ -83,10 +83,10 @@ impl SurfMlpFeatureMap {
             feature_pool,
             feature_vectors,
             feature_vectors_normalized,
-            grad_x: vec![],
-            grad_y: vec![],
-            int_img: vec![],
-            img_buf: vec![],
+            grad_x: Vec::new(),
+            grad_y: Vec::new(),
+            int_img: Vec::new(),
+            img_buf: Vec::new(),
         }
     }
 
@@ -524,8 +524,8 @@ impl FeaturePool {
             patch_size_inc_step: 1,
             patch_min_width: 16,
             patch_min_height: 16,
-            features: vec![],
-            patch_formats: vec![],
+            features: Vec::new(),
+            patch_formats: Vec::new(),
         }
     }
 
@@ -545,7 +545,7 @@ impl FeaturePool {
     }
 
     fn create(&mut self) {
-        let mut feature_vecs = vec![];
+        let mut feature_vecs = Vec::new();
 
         if self.sample_height - self.patch_min_height <= self.sample_width - self.patch_min_width {
             for format in &self.patch_formats {
