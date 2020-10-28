@@ -19,6 +19,10 @@
 use std::cmp::Ordering::*;
 use std::{cmp, ptr};
 
+use crate::feat::LabBoostedFeatureMap;
+use crate::feat::SurfMlpFeatureMap;
+use crate::feat::FeatureMap;
+use crate::classifier::{Classifier, Score, SurfMlpBuffers};
 use crate::common::{resize_image, FaceInfo, ImageData, ImagePyramid, Rectangle, Seq};
 use crate::model::Model;
 use crate::Detector;
@@ -101,6 +105,7 @@ fn is_legal_image(image: &ImageData) -> bool {
 }
 
 pub struct FuStDetector {
+    feature_maps: FeatureMaps,
     model: Model,
     wnd_data_buf: Vec<u8>,
     wnd_data: Vec<u8>,
@@ -113,6 +118,12 @@ pub struct FuStDetector {
     image_pyramid_scale_factor: f32,
 }
 
+struct FeatureMaps {
+    lab_boosted: LabBoostedFeatureMap,
+    surf_mlp: SurfMlpFeatureMap,
+    surf_buf: SurfMlpBuffers,
+}
+
 impl FuStDetector {
     pub fn new(model: Model) -> Self {
         let wnd_size = 40;
@@ -120,6 +131,11 @@ impl FuStDetector {
         let slide_wnd_step_y = 4;
 
         FuStDetector {
+            feature_maps: FeatureMaps {
+                lab_boosted: LabBoostedFeatureMap::new(),
+                surf_mlp: SurfMlpFeatureMap::new(),
+                surf_buf: SurfMlpBuffers::new(),
+            },
             model,
             wnd_data_buf: vec![0; (wnd_size * wnd_size) as usize],
             wnd_data: vec![0; (wnd_size * wnd_size) as usize],
@@ -130,6 +146,20 @@ impl FuStDetector {
             max_face_size: -1,
             cls_thresh: 3.85,
             image_pyramid_scale_factor: 0.8,
+        }
+    }
+
+    fn feature_map_for_classifier<'a>(classifier: &Classifier, maps: &'a mut FeatureMaps) -> &'a mut dyn FeatureMap {
+        match classifier {
+            Classifier::LabBoosted(_) => &mut maps.lab_boosted,
+            Classifier::SurfMlp(_) => &mut maps.surf_mlp,
+        }
+    }
+
+    fn classify_with_classifier(classifier: &Classifier, output: Option<&mut Vec<f32>>, maps: &mut FeatureMaps) -> Score {
+        match classifier {
+            Classifier::SurfMlp(c) => c.classify(output, &mut maps.surf_buf, &mut maps.surf_mlp),
+            Classifier::LabBoosted(c) => c.classify(&mut maps.lab_boosted),
         }
     }
 
@@ -248,7 +278,7 @@ impl FuStDetector {
         }
 
         while let Some(ref image_scaled) = image.get_next_scale_image(&mut scale_factor) {
-            self.model.feature_map_for_classifier(0).compute(image_scaled);
+            Self::feature_map_for_classifier(&self.model.get_classifiers()[0], &mut self.feature_maps).compute(image_scaled);
 
             let width = (self.wnd_size as f32 / scale_factor + 0.5) as u32;
             wnd_info.bbox_mut().set_width(width);
@@ -261,12 +291,13 @@ impl FuStDetector {
 
             for y in Seq::new(0, move |n| n + step_y).take_while(move |n| *n <= max_y) {
                 for x in Seq::new(0, move |n| n + step_x).take_while(move |n| *n <= max_x) {
-                    self.model.feature_map_for_classifier(0).set_roi(Rectangle::new(
+                    let rect = Rectangle::new(
                         x as i32,
                         y as i32,
                         self.wnd_size,
                         self.wnd_size,
-                    ));
+                    );
+                    Self::feature_map_for_classifier(&self.model.get_classifiers()[0], &mut self.feature_maps).set_roi(rect);
 
                     wnd_info
                         .bbox_mut()
@@ -275,8 +306,8 @@ impl FuStDetector {
                         .bbox_mut()
                         .set_y((y as f32 / scale_factor + 0.5) as i32);
 
-                    for (n, proposal) in proposals.iter_mut().enumerate().take(first_hierarchy_size) {
-                        let score = self.model.classify_with_classifier(n, None);
+                    for (classifier, proposal) in self.model.get_classifiers().iter().zip(proposals.iter_mut()).take(first_hierarchy_size) {
+                        let score = Self::classify_with_classifier(classifier, None, &mut self.feature_maps);
                         if score.is_positive() {
                             wnd_info.set_score(f64::from(score.score()));
                             proposal.push(wnd_info.clone());
@@ -341,15 +372,17 @@ impl FuStDetector {
                                 self.wnd_size,
                                 self.wnd_size,
                             );
-                            self.model.feature_map_for_classifier(model_idx).compute(&img_temp);
-                            self.model.feature_map_for_classifier(model_idx).set_roi(Rectangle::new(
+                            let classifier = &self.model.get_classifiers()[model_idx];
+                            Self::feature_map_for_classifier(classifier, &mut self.feature_maps).compute(&img_temp);
+                            let rect = Rectangle::new(
                                 0,
                                 0,
                                 self.wnd_size,
                                 self.wnd_size,
-                            ));
+                            );
+                            Self::feature_map_for_classifier(classifier, &mut self.feature_maps).set_roi(rect);
 
-                            let new_score = self.model.classify_with_classifier(model_idx, Some(&mut mlp_predicts));
+                            let new_score = Self::classify_with_classifier(classifier, Some(&mut mlp_predicts), &mut self.feature_maps);
                             if new_score.is_positive() {
                                 let x = bboxes[m].bbox().x() as f32;
                                 let y = bboxes[m].bbox().y() as f32;
