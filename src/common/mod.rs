@@ -31,6 +31,7 @@ pub struct Rectangle {
 }
 
 impl Rectangle {
+    #[inline]
     pub fn new(x: i32, y: i32, width: u32, height: u32) -> Self {
         Rectangle {
             x,
@@ -40,34 +41,42 @@ impl Rectangle {
         }
     }
 
+    #[inline]
     pub fn x(&self) -> i32 {
         self.x
     }
 
+    #[inline]
     pub fn set_x(&mut self, x: i32) {
         self.x = x;
     }
 
+    #[inline]
     pub fn y(&self) -> i32 {
         self.y
     }
 
+    #[inline]
     pub fn set_y(&mut self, y: i32) {
         self.y = y;
     }
 
+    #[inline]
     pub fn width(&self) -> u32 {
         self.width
     }
 
+    #[inline]
     pub fn set_width(&mut self, width: u32) {
         self.width = width;
     }
 
+    #[inline]
     pub fn height(&self) -> u32 {
         self.height
     }
 
+    #[inline]
     pub fn set_height(&mut self, height: u32) {
         self.height = height;
     }
@@ -95,22 +104,27 @@ impl Default for FaceInfo {
 }
 
 impl FaceInfo {
+    #[inline]
     pub fn new() -> Self {
         FaceInfo::default()
     }
 
+    #[inline]
     pub fn bbox(&self) -> &Rectangle {
         &self.bbox
     }
 
+    #[inline]
     pub fn bbox_mut(&mut self) -> &mut Rectangle {
         &mut self.bbox
     }
 
+    #[inline]
     pub fn set_score(&mut self, score: f64) {
         self.score = score;
     }
 
+    #[inline]
     pub fn score(&self) -> f64 {
         self.score
     }
@@ -142,6 +156,7 @@ where
 {
     type Item = T;
 
+    #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         let next = (self.generator)(&self.next);
         let current = mem::replace(&mut self.next, next);
