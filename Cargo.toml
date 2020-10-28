@@ -23,6 +23,9 @@ image = "0.23"
 imageproc = "0.21"
 criterion = "0.3"
 
+[lib]
+bench = false # workaround for "Unrecognized option: 'save-baseline'"
+
 [[bench]]
 name = "benchmarks"
 harness = false
