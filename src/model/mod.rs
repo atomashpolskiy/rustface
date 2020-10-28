@@ -118,7 +118,7 @@ impl<R: io::Read> ModelReader<R> {
                         num_wnd_vec.push(self.read_i32()?);
                     }
                 } else {
-                    num_wnd_vec = vec![];
+                    num_wnd_vec = Vec::new();
                 }
                 wnd_src_id.push(num_wnd_vec);
             }

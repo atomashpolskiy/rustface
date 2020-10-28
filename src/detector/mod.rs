@@ -272,11 +272,11 @@ impl FuStDetector {
         let first_hierarchy_size = self.model.get_hierarchy_size(0) as usize;
         let mut proposals: Vec<Vec<FaceInfo>> = Vec::with_capacity(first_hierarchy_size);
         for _ in 0..first_hierarchy_size {
-            proposals.push(vec![]);
+            proposals.push(Vec::new());
         }
         let mut proposals_nms: Vec<Vec<FaceInfo>> = Vec::with_capacity(first_hierarchy_size);
         for _ in 0..first_hierarchy_size {
-            proposals_nms.push(vec![]);
+            proposals_nms.push(Vec::new());
         }
 
         while let Some(ref image_scaled) = image.get_next_scale_image(&mut scale_factor) {
@@ -329,7 +329,7 @@ impl FuStDetector {
 
         let mut cls_idx = first_hierarchy_size;
         let mut model_idx = first_hierarchy_size;
-        let mut buf_idx: Vec<i32> = vec![];
+        let mut buf_idx: Vec<i32> = Vec::new();
 
         for i in 1..self.model.get_hierarchy_count() {
             let hierarchy_size_i = self.model.get_hierarchy_size(i) as usize;
