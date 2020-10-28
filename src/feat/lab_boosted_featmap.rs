@@ -58,12 +58,14 @@ impl FeatureMap for LabBoostedFeatureMap {
         self.compute_feature_map();
     }
 
+    #[inline]
     fn set_roi(&mut self, roi: Rectangle) {
         self.roi = Some(roi);
     }
 }
 
 impl LabBoostedFeatureMap {
+    #[inline]
     pub fn new() -> Self {
         LabBoostedFeatureMap {
             roi: None,

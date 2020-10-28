@@ -81,6 +81,7 @@ impl Detector for FuStDetector {
         self.min_face_size = min_face_size as i32;
     }
 
+    #[inline]
     fn set_max_face_size(&mut self, max_face_size: u32) {
         self.max_face_size = max_face_size as i32;
     }
@@ -100,6 +101,7 @@ impl Detector for FuStDetector {
     }
 }
 
+#[inline]
 fn is_legal_image(image: &ImageData) -> bool {
     image.num_channels() == 1 && image.width() > 0 && image.height() > 0
 }

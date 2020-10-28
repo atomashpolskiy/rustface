@@ -57,6 +57,7 @@ impl FeatureMap for SurfMlpFeatureMap {
         self.compute_integral_images();
     }
 
+    #[inline]
     fn set_roi(&mut self, roi: Rectangle) {
         self.roi = Some(roi);
     }
@@ -272,6 +273,7 @@ impl SurfMlpFeatureMap {
         }
     }
 
+    #[inline]
     fn vector_cumulative_add(x: *const i32, len: usize, num_channel: u32) {
         SurfMlpFeatureMap::vector_cumulative_add_portable(x, len, num_channel);
     }
@@ -491,6 +493,7 @@ impl SurfMlpFeatureMap {
         }
     }
 
+    #[inline]
     pub fn get_feature_vector_dim(&self, feature_id: usize) -> usize {
         self.feature_pool.get_feature_vector_dim(feature_id)
     }
@@ -511,6 +514,7 @@ struct FeaturePool {
 impl FeaturePool {
     const K_NUM_INT_CHANNEL: u32 = 8;
 
+    #[inline]
     fn new() -> Self {
         FeaturePool {
             sample_width: 40,
@@ -620,14 +624,17 @@ impl FeaturePool {
         }
     }
 
+    #[inline]
     fn size(&self) -> usize {
         self.features.len()
     }
 
+    #[inline]
     fn get_feature(&self, feature_id: usize) -> &Feature {
         &self.features[feature_id]
     }
 
+    #[inline]
     fn get_feature_vector_dim(&self, feature_id: usize) -> usize {
         let feature = &self.features[feature_id];
         (feature.num_cell_per_col * feature.num_cell_per_row * FeaturePool::K_NUM_INT_CHANNEL)

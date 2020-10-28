@@ -30,6 +30,7 @@ struct TwoWayBuffer {
 }
 
 impl TwoWayBuffer {
+    #[inline]
     fn new() -> Self {
         TwoWayBuffer {
             input: vec![],
@@ -37,14 +38,17 @@ impl TwoWayBuffer {
         }
     }
 
+    #[inline]
     fn get_buffers(&mut self) -> (&mut Vec<f32>, &mut Vec<f32>) {
         (&mut self.input, &mut self.output)
     }
 
+    #[inline]
     fn get_input(&mut self) -> &mut Vec<f32> {
         &mut self.input
     }
 
+    #[inline]
     fn swap(&mut self) {
         unsafe {
             ptr::swap(&mut self.input, &mut self.output);
@@ -59,6 +63,7 @@ pub struct SurfMlpBuffers {
 }
 
 impl SurfMlpBuffers {
+    #[inline]
     pub fn new() -> Self {
         SurfMlpBuffers {
             input: Vec::new(),
@@ -76,6 +81,7 @@ pub struct SurfMlpClassifier {
 }
 
 impl SurfMlpClassifier {
+    #[inline]
     pub fn new() -> Self {
         SurfMlpClassifier {
             feature_ids: vec![],
@@ -84,10 +90,12 @@ impl SurfMlpClassifier {
         }
     }
 
+    #[inline]
     pub fn add_feature_id(&mut self, feature_id: i32) {
         self.feature_ids.push(feature_id);
     }
 
+    #[inline]
     pub fn set_threshold(&mut self, thresh: f32) {
         self.thresh = thresh;
     }
@@ -124,6 +132,7 @@ impl SurfMlpClassifier {
         })
     }
 
+    #[inline]
     fn relu(x: f32) -> f32 {
         if x > 0.0 {
             x
@@ -132,6 +141,7 @@ impl SurfMlpClassifier {
         }
     }
 
+    #[inline]
     fn sigmoid(x: f32) -> f32 {
         1.0 / (1.0 + (-x).exp())
     }
@@ -183,10 +193,12 @@ impl Layer {
             });
     }
 
+    #[inline]
     fn input_size(&self) -> usize {
         self.input_dim
     }
 
+    #[inline]
     fn output_size(&self) -> usize {
         self.output_dim
     }

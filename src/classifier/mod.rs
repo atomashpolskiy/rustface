@@ -30,6 +30,7 @@ pub enum ClassifierKind {
 }
 
 impl ClassifierKind {
+    #[inline]
     pub fn from(id: i32) -> Option<Self> {
         match id {
             0 => Some(ClassifierKind::LabBoosted),
@@ -45,10 +46,12 @@ pub struct Score {
 }
 
 impl Score {
+    #[inline]
     pub fn is_positive(&self) -> bool {
         self.positive
     }
 
+    #[inline]
     pub fn score(&self) -> f32 {
         self.score
     }

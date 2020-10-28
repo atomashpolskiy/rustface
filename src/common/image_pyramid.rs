@@ -104,6 +104,7 @@ impl ImagePyramid {
         self.update_buf_scaled();
     }
 
+    #[inline]
     pub fn set_min_scale(&mut self, min_scale: f32) {
         self.min_scale = min_scale;
     }
@@ -114,6 +115,7 @@ impl ImagePyramid {
         }
     }
 
+    #[inline]
     pub fn get_image_1x(&self) -> ImageData {
         ImageData::new(&self.img_buf, self.width1x, self.height1x)
     }
