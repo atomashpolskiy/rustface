@@ -19,7 +19,7 @@
 use crate::math;
 use super::Score;
 use crate::feat::SurfMlpFeatureMap;
-use std::ptr;
+use std::mem;
 
 #[cfg(feature = "rayon")]
 use rayon::prelude::*;
@@ -50,9 +50,7 @@ impl TwoWayBuffer {
 
     #[inline]
     fn swap(&mut self) {
-        unsafe {
-            ptr::swap(&mut self.input, &mut self.output);
-        }
+        mem::swap(&mut self.input, &mut self.output);
     }
 }
 
