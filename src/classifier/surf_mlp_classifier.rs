@@ -52,13 +52,26 @@ impl TwoWayBuffer {
     }
 }
 
+pub struct SurfMlpBuffers {
+    input: Vec<f32>,
+    output: Vec<f32>,
+    layers: TwoWayBuffer,
+}
+
+impl SurfMlpBuffers {
+    pub fn new() -> Self {
+        SurfMlpBuffers {
+            input: Vec::new(),
+            output: Vec::new(),
+            layers: TwoWayBuffer::new(),
+        }
+    }
+}
+
 pub struct SurfMlpClassifier {
     feature_ids: Vec<i32>,
     thresh: f32,
     layers: Vec<Layer>,
-    layers_buf: TwoWayBuffer,
-    input_buf: Option<Vec<f32>>,
-    output_buf: Option<Vec<f32>>,
 }
 
 impl SurfMlpClassifier {
@@ -67,9 +80,6 @@ impl SurfMlpClassifier {
             feature_ids: vec![],
             thresh: 0.0,
             layers: vec![],
-            layers_buf: TwoWayBuffer::new(),
-            input_buf: None,
-            output_buf: None,
         }
     }
 
@@ -125,27 +135,24 @@ impl SurfMlpClassifier {
         1.0 / (1.0 + (-x).exp())
     }
 
-    fn compute_internal(&mut self) {
-        let input = self.input_buf.as_ref().unwrap();
-        let output = self.output_buf.as_mut().unwrap();
-
-        self.layers_buf
+    fn compute_internal(&self, bufs: &mut SurfMlpBuffers) {
+        bufs.layers
             .get_input()
             .resize(self.layers[0].output_size(), 0.0);
-        self.layers[0].compute(input, self.layers_buf.get_input());
+        self.layers[0].compute(&bufs.input, bufs.layers.get_input());
 
         for i in 1..(self.layers.len() - 1) {
             {
                 let layer = &self.layers[i];
-                let (input_buf, output_buf) = self.layers_buf.get_buffers();
+                let (input_buf, output_buf) = bufs.layers.get_buffers();
                 output_buf.resize(layer.output_size(), 0.0);
                 layer.compute(input_buf, output_buf);
             }
-            self.layers_buf.swap();
+            bufs.layers.swap();
         }
 
         let last_layer = &self.layers[self.layers.len() - 1];
-        last_layer.compute(self.layers_buf.get_input(), output);
+        last_layer.compute(bufs.layers.get_input(), &mut bufs.output);
     }
 }
 
@@ -184,20 +191,16 @@ impl Layer {
 }
 
 impl SurfMlpClassifier {
-    pub fn classify(&mut self, output: Option<&mut Vec<f32>>, feature_map: &mut SurfMlpFeatureMap) -> Score {
-        if self.input_buf.is_none() {
-            let input_layer = self.layers.get(0).expect("No layers");
-            self.input_buf = Some(vec![0.0; input_layer.input_size()]);
-        }
-        if self.output_buf.is_none() {
-            let num_layers = self.layers.len();
-            let output_layer = self.layers.get(num_layers - 1).expect("No layers");
-            self.output_buf = Some(vec![0.0; output_layer.output_size()]);
-        }
+    pub fn classify(&self, output: Option<&mut Vec<f32>>, bufs: &mut SurfMlpBuffers, feature_map: &mut SurfMlpFeatureMap) -> Score {
+        let input_layer = self.layers.get(0).expect("No layers");
+        bufs.input.resize(input_layer.input_size(), 0.0);
+
+        let num_layers = self.layers.len();
+        let output_layer = self.layers.get(num_layers - 1).expect("No layers");
+        bufs.output.resize(output_layer.output_size(), 0.0);
 
         {
-            let input_buf = self.input_buf.as_mut().unwrap();
-            let mut dest = input_buf.as_mut_ptr();
+            let mut dest = bufs.input.as_mut_ptr();
             unsafe {
                 for &feature_id in &self.feature_ids[..] {
                     feature_map.get_feature_vector((feature_id - 1) as usize, dest);
@@ -207,10 +210,9 @@ impl SurfMlpClassifier {
             }
         }
 
-        self.compute_internal();
+        self.compute_internal(bufs);
 
-        let output_buf = self.output_buf.as_ref().unwrap();
-        let score = *output_buf.get(0).expect("No score");
+        let score = *bufs.output.get(0).expect("No score");
         let score = Score {
             positive: score > self.thresh,
             score,
@@ -218,7 +220,7 @@ impl SurfMlpClassifier {
 
         if let Some(output) = output {
             output.clear();
-            output.extend_from_slice(&output_buf);
+            output.extend_from_slice(&bufs.output);
         }
 
         score

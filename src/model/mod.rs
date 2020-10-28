@@ -16,13 +16,12 @@
 // You should have received a copy of the BSD 2-Clause License along with the software.
 // If not, see < https://opensource.org/licenses/BSD-2-Clause>.
 
-use crate::classifier::Score;
+
 use std::fs::File;
 use std::io::BufReader;
 use std::io;
 
 use crate::classifier::{Classifier, ClassifierKind, LabBoostedClassifier, SurfMlpClassifier};
-use crate::feat::{FeatureMap, LabBoostedFeatureMap, SurfMlpFeatureMap};
 use byteorder::{LittleEndian, ReadBytesExt};
 
 pub struct Model {
@@ -30,52 +29,43 @@ pub struct Model {
     wnd_src_id: Vec<Vec<i32>>,
     hierarchy_sizes: Vec<i32>,
     num_stages: Vec<i32>,
-    lab_boosted_feature_map: LabBoostedFeatureMap,
-    surf_mlp_feature_map: SurfMlpFeatureMap,
 }
 
 impl Model {
-    pub fn get_classifiers(&mut self) -> &mut Vec<Classifier> {
-        &mut self.classifiers
+    #[inline]
+    pub fn get_classifiers(&self) -> &[Classifier] {
+        &self.classifiers
     }
 
-    pub fn feature_map_for_classifier(&mut self, index: usize) -> &mut dyn FeatureMap {
-        match self.classifiers[index] {
-            Classifier::LabBoosted(_) => &mut self.lab_boosted_feature_map,
-            Classifier::SurfMlp(_) => &mut self.surf_mlp_feature_map,
-        }
-    }
-
-    pub fn classify_with_classifier(&mut self, index: usize, output: Option<&mut Vec<f32>>) -> Score {
-        match self.classifiers[index] {
-            Classifier::SurfMlp(ref mut c) => c.classify(output, &mut self.surf_mlp_feature_map),
-            Classifier::LabBoosted(ref mut c) => c.classify(&mut self.lab_boosted_feature_map),
-        }
-    }
-
+    #[inline]
     pub fn get_wnd_src(&self, id: usize) -> &Vec<i32> {
         &self.wnd_src_id[id]
     }
 
+    #[inline]
     pub fn get_hierarchy_count(&self) -> usize {
         self.hierarchy_sizes.len()
     }
 
+    #[inline]
     pub fn get_num_stage(&self, id: usize) -> i32 {
         self.num_stages[id]
     }
 
+    #[inline]
     pub fn get_hierarchy_size(&self, hierarchy_index: usize) -> i32 {
         self.hierarchy_sizes[hierarchy_index]
     }
 }
 
 /// Load model from a file.
+#[inline]
 pub fn load_model(path: &str) -> Result<Model, io::Error> {
     read_model(BufReader::new(File::open(path)?))
 }
 
 /// Load model from any stream or buffer
+#[inline]
 pub fn read_model<R: io::Read>(buf: R) -> Result<Model, io::Error> {
     ModelReader::new(buf).read()
 }
@@ -85,6 +75,7 @@ struct ModelReader<R: io::Read> {
 }
 
 impl<R: io::Read> ModelReader<R> {
+    #[inline]
     fn new(reader: R) -> Self {
         ModelReader {
             reader,
@@ -133,8 +124,6 @@ impl<R: io::Read> ModelReader<R> {
         }
 
         Ok(Model {
-            lab_boosted_feature_map: LabBoostedFeatureMap::new(),
-            surf_mlp_feature_map: SurfMlpFeatureMap::new(),
             classifiers,
             wnd_src_id,
             hierarchy_sizes,
