@@ -100,7 +100,7 @@ impl SurfMlpClassifier {
             output_dim,
             weights,
             biases,
-            act_func: Box::new(Self::relu),
+            act_func: Self::relu,
         })
     }
 
@@ -116,7 +116,7 @@ impl SurfMlpClassifier {
             output_dim,
             weights,
             biases,
-            act_func: Box::new(Self::sigmoid),
+            act_func: Self::sigmoid,
         })
     }
 
@@ -156,14 +156,12 @@ impl SurfMlpClassifier {
     }
 }
 
-type ActFunc = dyn Fn(f32) -> f32 + Sync;
-
 struct Layer {
     input_dim: usize,
     output_dim: usize,
     weights: Vec<f32>,
     biases: Vec<f32>,
-    act_func: Box<ActFunc>,
+    act_func: fn(f32) -> f32,
 }
 
 impl Layer {
