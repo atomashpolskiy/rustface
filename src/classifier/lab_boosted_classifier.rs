@@ -19,11 +19,13 @@
 use super::Score;
 use crate::feat::LabBoostedFeatureMap;
 
+#[derive(Clone)]
 pub struct LabBoostedClassifier {
     features: Vec<(i32, i32)>,
     base_classifiers: Vec<BaseClassifier>,
 }
 
+#[derive(Clone)]
 struct BaseClassifier {
     weights: Vec<f32>,
     thresh: f32,
