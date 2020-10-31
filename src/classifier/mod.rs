@@ -54,6 +54,7 @@ impl Score {
     }
 }
 
+#[derive(Clone)]
 pub enum Classifier {
     SurfMlp(SurfMlpClassifier),
     LabBoosted(LabBoostedClassifier),

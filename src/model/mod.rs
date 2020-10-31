@@ -24,6 +24,7 @@ use std::io;
 use crate::classifier::{Classifier, ClassifierKind, LabBoostedClassifier, SurfMlpClassifier};
 use byteorder::{LittleEndian, ReadBytesExt};
 
+#[derive(Clone)]
 pub struct Model {
     classifiers: Vec<Classifier>,
     wnd_src_id: Vec<Vec<i32>>,

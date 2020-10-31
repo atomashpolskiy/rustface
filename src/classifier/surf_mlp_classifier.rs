@@ -68,6 +68,7 @@ impl SurfMlpBuffers {
     }
 }
 
+#[derive(Clone)]
 pub struct SurfMlpClassifier {
     feature_ids: Vec<i32>,
     thresh: f32,
@@ -156,6 +157,7 @@ impl SurfMlpClassifier {
     }
 }
 
+#[derive(Clone)]
 struct Layer {
     input_dim: usize,
     output_dim: usize,
