@@ -266,25 +266,13 @@ impl FuStDetector {
     }
 
     fn detect_impl(&mut self, image: &mut ImagePyramid) -> Vec<FaceInfo> {
-        let mut scale_factor = 0.0;
-
-        let mut wnd_info = FaceInfo::new();
         let first_hierarchy_size = self.model.get_hierarchy_size(0) as usize;
-        let mut proposals: Vec<Vec<FaceInfo>> = Vec::with_capacity(first_hierarchy_size);
-        for _ in 0..first_hierarchy_size {
-            proposals.push(Vec::new());
-        }
-        let mut proposals_nms: Vec<Vec<FaceInfo>> = Vec::with_capacity(first_hierarchy_size);
-        for _ in 0..first_hierarchy_size {
-            proposals_nms.push(Vec::new());
-        }
+        let mut proposals = vec![Vec::new(); first_hierarchy_size];
+        let mut proposals_nms = vec![Vec::new(); first_hierarchy_size];
 
-        while let Some(ref image_scaled) = image.get_next_scale_image(&mut scale_factor) {
-            Self::feature_map_for_classifier(&self.model.get_classifiers()[0], &mut self.feature_maps).compute(image_scaled);
+        while let Some((image_scaled, scale_factor)) = image.get_next_scale_image() {
+            Self::feature_map_for_classifier(&self.model.get_classifiers()[0], &mut self.feature_maps).compute(&image_scaled);
 
-            let width = (self.wnd_size as f32 / scale_factor + 0.5) as u32;
-            wnd_info.bbox_mut().set_width(width);
-            wnd_info.bbox_mut().set_height(width);
 
             let step_x = self.slide_wnd_step_x;
             let step_y = self.slide_wnd_step_y;
@@ -301,18 +289,18 @@ impl FuStDetector {
                     );
                     Self::feature_map_for_classifier(&self.model.get_classifiers()[0], &mut self.feature_maps).set_roi(rect);
 
-                    wnd_info
-                        .bbox_mut()
-                        .set_x((x as f32 / scale_factor + 0.5) as i32);
-                    wnd_info
-                        .bbox_mut()
-                        .set_y((y as f32 / scale_factor + 0.5) as i32);
-
                     for (classifier, proposal) in self.model.get_classifiers().iter().zip(proposals.iter_mut()).take(first_hierarchy_size) {
                         let score = Self::classify_with_classifier(classifier, None, &mut self.feature_maps);
                         if score.is_positive() {
+                            let mut wnd_info = FaceInfo::new();
+                            let bbox = wnd_info.bbox_mut();
+                            bbox.set_x((x as f32 / scale_factor + 0.5) as i32);
+                            bbox.set_y((y as f32 / scale_factor + 0.5) as i32);
+                            let width = (self.wnd_size as f32 / scale_factor + 0.5) as u32;
+                            bbox.set_width(width);
+                            bbox.set_height(width);
                             wnd_info.set_score(f64::from(score.score()));
-                            proposal.push(wnd_info.clone());
+                            proposal.push(wnd_info);
                         }
                     }
                 }

@@ -146,14 +146,14 @@ impl ImagePyramid {
         }
     }
 
-    pub fn get_next_scale_image(&mut self, scale_factor: &mut f32) -> Option<ImageData> {
+    pub fn get_next_scale_image(&mut self) -> Option<(ImageData, f32)> {
         if self.scale_factor < self.min_scale {
             return None;
         }
 
-        *scale_factor = self.scale_factor;
-        self.width_scaled = (self.width1x as f32 * self.scale_factor) as u32;
-        self.height_scaled = (self.height1x as f32 * self.scale_factor) as u32;
+        let scale_factor = self.scale_factor;
+        self.width_scaled = (self.width1x as f32 * scale_factor) as u32;
+        self.height_scaled = (self.height1x as f32 * scale_factor) as u32;
 
         let src = ImageData::new(&self.img_buf, self.width1x, self.height1x);
         resize_image(
@@ -162,14 +162,14 @@ impl ImagePyramid {
             self.width_scaled,
             self.height_scaled,
         );
-        let img_scaled = Some(ImageData::new(
+        let img_scaled = ImageData::new(
             &self.img_buf_scaled,
             self.width_scaled,
             self.height_scaled,
-        ));
+        );
         self.scale_factor *= self.scale_step;
 
-        img_scaled
+        Some((img_scaled, scale_factor))
     }
 }
 
