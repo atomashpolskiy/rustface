@@ -26,7 +26,6 @@ use std::ptr;
 use rayon::prelude::*;
 
 pub struct SurfMlpFeatureMap {
-    roi: Option<Rectangle>,
     width: u32,
     height: u32,
     length: usize,
@@ -56,11 +55,6 @@ impl FeatureMap for SurfMlpFeatureMap {
         self.compute_gradient_images(input);
         self.compute_integral_images();
     }
-
-    #[inline]
-    fn set_roi(&mut self, roi: Rectangle) {
-        self.roi = Some(roi);
-    }
 }
 
 impl SurfMlpFeatureMap {
@@ -76,7 +70,6 @@ impl SurfMlpFeatureMap {
         }
 
         SurfMlpFeatureMap {
-            roi: None,
             width: 0,
             height: 0,
             length: 0,
@@ -290,11 +283,10 @@ impl SurfMlpFeatureMap {
         }
     }
 
-    unsafe fn compute_feature_vector(&mut self, feature_id: usize) {
+    unsafe fn compute_feature_vector(&mut self, feature_id: usize, roi: Rectangle) {
         let feature = self.feature_pool.get_feature(feature_id);
         let feature_vec = self.feature_vectors[feature_id].as_mut_ptr();
 
-        let roi = self.roi.as_ref().unwrap();
         let init_cell_x = roi.x() + feature.patch.x();
         let init_cell_y = roi.y() + feature.patch.y();
         let k_num_int_channel = FeaturePool::K_NUM_INT_CHANNEL as isize;
@@ -461,8 +453,8 @@ impl SurfMlpFeatureMap {
         }
     }
 
-    pub unsafe fn get_feature_vector(&mut self, feature_id: usize, feature_vec: *mut f32) {
-        self.compute_feature_vector(feature_id);
+    pub unsafe fn get_feature_vector(&mut self, feature_id: usize, feature_vec: *mut f32, roi: Rectangle) {
+        self.compute_feature_vector(feature_id, roi);
 
         SurfMlpFeatureMap::normalize_feature_vector(
             &self.feature_vectors[feature_id],

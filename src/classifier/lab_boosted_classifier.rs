@@ -18,6 +18,7 @@
 
 use super::Score;
 use crate::feat::LabBoostedFeatureMap;
+use crate::Rectangle;
 
 #[derive(Clone)]
 pub struct LabBoostedClassifier {
@@ -56,7 +57,7 @@ const K_FEAT_GROUP_SIZE: usize = 10;
 const K_STDDEV_THRESH: f64 = 10.0;
 
 impl LabBoostedClassifier {
-    pub fn classify(&self, feature_map: &LabBoostedFeatureMap) -> Score {
+    pub fn classify(&self, feature_map: &LabBoostedFeatureMap, roi: Rectangle) -> Score {
         let mut positive = true;
         let mut score = 0.0;
 
@@ -64,13 +65,13 @@ impl LabBoostedClassifier {
         while positive && i < self.base_classifiers.len() {
             for _ in 0..K_FEAT_GROUP_SIZE {
                 let (offset_x, offset_y) = self.features[i];
-                let feature_val = feature_map.get_feature_val(offset_x, offset_y);
+                let feature_val = feature_map.get_feature_val(offset_x, offset_y, roi);
                 score += self.base_classifiers[i].weights[feature_val as usize];
                 i += 1;
             }
             positive = score >= self.base_classifiers[i - 1].thresh;
         }
-        positive = positive && (feature_map.get_std_dev() > K_STDDEV_THRESH);
+        positive = positive && (feature_map.get_std_dev(roi) > K_STDDEV_THRESH);
 
         Score { positive, score }
     }

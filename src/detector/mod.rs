@@ -158,10 +158,10 @@ impl FuStDetector {
         }
     }
 
-    fn classify_with_classifier(classifier: &Classifier, output: Option<&mut Vec<f32>>, maps: &mut FeatureMaps) -> Score {
+    fn classify_with_classifier(classifier: &Classifier, output: Option<&mut Vec<f32>>, maps: &mut FeatureMaps, roi: Rectangle) -> Score {
         match classifier {
-            Classifier::SurfMlp(c) => c.classify(output, &mut maps.surf_buf, &mut maps.surf_mlp),
-            Classifier::LabBoosted(c) => c.classify(&mut maps.lab_boosted),
+            Classifier::SurfMlp(c) => c.classify(output, &mut maps.surf_buf, &mut maps.surf_mlp, roi),
+            Classifier::LabBoosted(c) => c.classify(&mut maps.lab_boosted, roi),
         }
     }
 
@@ -287,10 +287,10 @@ impl FuStDetector {
                         self.wnd_size,
                         self.wnd_size,
                     );
-                    Self::feature_map_for_classifier(&self.model.get_classifiers()[0], &mut self.feature_maps).set_roi(rect);
+                    Self::feature_map_for_classifier(&self.model.get_classifiers()[0], &mut self.feature_maps);
 
                     for (classifier, proposal) in self.model.get_classifiers().iter().zip(proposals.iter_mut()).take(first_hierarchy_size) {
-                        let score = Self::classify_with_classifier(classifier, None, &mut self.feature_maps);
+                        let score = Self::classify_with_classifier(classifier, None, &mut self.feature_maps, rect);
                         if score.is_positive() {
                             let mut wnd_info = FaceInfo::new();
                             let bbox = wnd_info.bbox_mut();
@@ -370,9 +370,8 @@ impl FuStDetector {
                                 self.wnd_size,
                                 self.wnd_size,
                             );
-                            Self::feature_map_for_classifier(classifier, &mut self.feature_maps).set_roi(rect);
 
-                            let new_score = Self::classify_with_classifier(classifier, Some(&mut mlp_predicts), &mut self.feature_maps);
+                            let new_score = Self::classify_with_classifier(classifier, Some(&mut mlp_predicts), &mut self.feature_maps, rect);
                             if new_score.is_positive() {
                                 let x = bboxes[m].bbox().x() as f32;
                                 let y = bboxes[m].bbox().y() as f32;
