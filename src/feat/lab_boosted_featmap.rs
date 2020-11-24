@@ -26,7 +26,6 @@ use crate::feat::FeatureMap;
 use crate::math;
 
 pub struct LabBoostedFeatureMap {
-    roi: Option<Rectangle>,
     width: u32,
     height: u32,
     length: usize,
@@ -57,18 +56,12 @@ impl FeatureMap for LabBoostedFeatureMap {
         self.compute_rect_sum();
         self.compute_feature_map();
     }
-
-    #[inline]
-    fn set_roi(&mut self, roi: Rectangle) {
-        self.roi = Some(roi);
-    }
 }
 
 impl LabBoostedFeatureMap {
     #[inline]
     pub fn new() -> Self {
         LabBoostedFeatureMap {
-            roi: None,
             width: 0,
             height: 0,
             length: 0,
@@ -82,24 +75,17 @@ impl LabBoostedFeatureMap {
         }
     }
 
-    pub fn get_feature_val(&self, offset_x: i32, offset_y: i32) -> u8 {
-        let roi = self.roi.as_ref().unwrap();
+    #[inline]
+    pub fn get_feature_val(&self, offset_x: i32, offset_y: i32, roi: Rectangle) -> u8 {
         let i = (roi.y() + offset_y) * (self.width as i32) + roi.x() + offset_x;
         self.feat_map[i as usize]
     }
 
-    pub fn get_std_dev(&self) -> f64 {
-        let roi_width;
-        let roi_height;
-        let roi_x;
-        let roi_y;
-        {
-            let roi = self.roi.as_ref().unwrap();
-            roi_width = roi.width() as i32;
-            roi_height = roi.height() as i32;
-            roi_x = roi.x() as i32;
-            roi_y = roi.y() as i32;
-        }
+    pub fn get_std_dev(&self, roi: Rectangle) -> f64 {
+        let roi_width = roi.width() as i32;
+        let roi_height = roi.height() as i32;
+        let roi_x = roi.x() as i32;
+        let roi_y = roi.y() as i32;
         let self_width = self.width as i32;
 
         let mean;

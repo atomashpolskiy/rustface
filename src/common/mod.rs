@@ -22,7 +22,7 @@ use std::mem;
 
 pub use self::image_pyramid::{resize_image, ImageData, ImagePyramid};
 
-#[derive(Clone, Debug)]
+#[derive(Copy, Clone, Debug)]
 pub struct Rectangle {
     x: i32,
     y: i32,

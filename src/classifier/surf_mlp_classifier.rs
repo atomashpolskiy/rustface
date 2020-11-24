@@ -19,6 +19,7 @@
 use crate::math;
 use super::Score;
 use crate::feat::SurfMlpFeatureMap;
+use crate::Rectangle;
 use std::mem;
 
 #[cfg(feature = "rayon")]
@@ -203,7 +204,7 @@ impl Layer {
 }
 
 impl SurfMlpClassifier {
-    pub fn classify(&self, output: Option<&mut Vec<f32>>, bufs: &mut SurfMlpBuffers, feature_map: &mut SurfMlpFeatureMap) -> Score {
+    pub fn classify(&self, output: Option<&mut Vec<f32>>, bufs: &mut SurfMlpBuffers, feature_map: &mut SurfMlpFeatureMap, roi: Rectangle) -> Score {
         let input_layer = self.layers.get(0).expect("No layers");
         bufs.input.resize(input_layer.input_size(), 0.0);
 
@@ -215,7 +216,7 @@ impl SurfMlpClassifier {
             let mut dest = bufs.input.as_mut_ptr();
             unsafe {
                 for &feature_id in &self.feature_ids[..] {
-                    feature_map.get_feature_vector((feature_id - 1) as usize, dest);
+                    feature_map.get_feature_vector((feature_id - 1) as usize, dest, roi);
                     let offset = feature_map.get_feature_vector_dim(feature_id as usize);
                     dest = dest.offset(offset as isize);
                 }
