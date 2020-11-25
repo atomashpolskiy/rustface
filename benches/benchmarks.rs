@@ -43,7 +43,7 @@ fn get_default_detector() -> Box<dyn Detector> {
 
 fn detect_single_image(c: &mut Criterion) {
     let mut detector = get_default_detector();
-    let img = get_test_image().to_luma8();
+    let img = get_test_image().to_luma();
 
     // convert to rustface internal image datastructure
     let (width, height) = img.dimensions();
