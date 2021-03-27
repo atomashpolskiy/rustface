@@ -23,8 +23,8 @@
             <img src="https://docs.rs/rustface/badge.svg"
                  alt="docs.rs">
         </a>
-    <a href="https://travis-ci.org/atomashpolskiy/rustface">
-        <img src="https://img.shields.io/travis/atomashpolskiy/rustface/master.svg"
+    <a href="https://travis-ci.com/github/atomashpolskiy/rustface">
+        <img src="https://travis-ci.com/atomashpolskiy/rustface.svg?branch=master"
              alt="Linux build">
     </a>    
     <a href="https://opensource.org/licenses/BSD-2-Clause">
