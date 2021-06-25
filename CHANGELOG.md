@@ -1,3 +1,6 @@
+## 0.1.7 (2021-06-25)
+* Avoid out-of-bounds memory read (issue [#165](https://github.com/atomashpolskiy/rustface/issues/165)) (thanks @mashedcode!)
+
 ## 0.1.6 (2020-11-02)
 * Made model struct immutable and `Clone`-able so it can be re-used (issue [#12](https://github.com/atomashpolskiy/rustface/issues/12)) (thanks @kornelski!)
 * Made `Rectangle` public (thanks @kornelski!).
