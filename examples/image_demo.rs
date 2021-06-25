@@ -57,8 +57,8 @@ fn main() {
         }
     };
 
-    let mut rgb = image.to_rgb();
-    let faces = detect_faces(&mut *detector, &image.to_luma());
+    let mut rgb = image.to_rgb8();
+    let faces = detect_faces(&mut *detector, &image.to_luma8());
 
     for face in faces {
         let bbox = face.bbox();
