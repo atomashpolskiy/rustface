@@ -20,8 +20,8 @@ mod lab_boosted_classifier;
 mod surf_mlp_classifier;
 
 pub use self::lab_boosted_classifier::LabBoostedClassifier;
-pub use self::surf_mlp_classifier::SurfMlpClassifier;
 pub use self::surf_mlp_classifier::SurfMlpBuffers;
+pub use self::surf_mlp_classifier::SurfMlpClassifier;
 
 #[derive(Debug, Hash, PartialEq, Eq, Clone)]
 pub enum ClassifierKind {

@@ -16,10 +16,9 @@
 // You should have received a copy of the BSD 2-Clause License along with the software.
 // If not, see < https://opensource.org/licenses/BSD-2-Clause>.
 
-
 use std::fs::File;
-use std::io::BufReader;
 use std::io;
+use std::io::BufReader;
 
 use crate::classifier::{Classifier, ClassifierKind, LabBoostedClassifier, SurfMlpClassifier};
 use byteorder::{LittleEndian, ReadBytesExt};
@@ -78,9 +77,7 @@ struct ModelReader<R: io::Read> {
 impl<R: io::Read> ModelReader<R> {
     #[inline]
     fn new(reader: R) -> Self {
-        ModelReader {
-            reader,
-        }
+        ModelReader { reader }
     }
 
     pub fn read(mut self) -> Result<Model, io::Error> {

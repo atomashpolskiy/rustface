@@ -50,7 +50,11 @@ pub unsafe fn vector_sub(left: *const i32, right: *const i32, dest: *mut i32, le
 }
 
 pub fn vector_inner_product(left: &[f32], right: &[f32]) -> f32 {
-    left.iter().copied().zip(right.iter().copied()).map(|(l,r)| l * r).sum()
+    left.iter()
+        .copied()
+        .zip(right.iter().copied())
+        .map(|(l, r)| l * r)
+        .sum()
 }
 
 #[cfg(test)]

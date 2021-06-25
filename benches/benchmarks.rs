@@ -58,7 +58,8 @@ fn detect_single_image(c: &mut Criterion) {
         })
         // Limit the measurement time and the sample size
         // to make sure the benchmark finishes in a feasible amount of time.
-        .measurement_time(target_runtime).sample_size(20),
+        .measurement_time(target_runtime)
+        .sample_size(20),
     );
 }
 
@@ -74,7 +75,7 @@ fn bench_square(c: &mut Criterion) {
 
 fn bench_abs(c: &mut Criterion) {
     c.bench_function("math_abs 500", move |b| {
-        let vec: Vec<_> = (0..500).map(|i| if i%3==0 {i} else {-i}).collect();
+        let vec: Vec<_> = (0..500).map(|i| if i % 3 == 0 { i } else { -i }).collect();
         let mut dest = vec![0; 500];
         b.iter(|| {
             unsafe { abs(vec.as_ptr(), dest.as_mut_ptr(), vec.len()) };

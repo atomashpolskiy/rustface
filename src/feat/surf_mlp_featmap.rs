@@ -16,10 +16,10 @@
 // You should have received a copy of the BSD 2-Clause License along with the software.
 // If not, see < https://opensource.org/licenses/BSD-2-Clause>.
 
-use crate::ImageData;
 use crate::common::{Rectangle, Seq};
 use crate::feat::FeatureMap;
 use crate::math;
+use crate::ImageData;
 use std::ptr;
 
 #[cfg(feature = "rayon")]
@@ -45,10 +45,7 @@ impl FeatureMap for SurfMlpFeatureMap {
         let height = image.height();
 
         if width == 0 || height == 0 {
-            panic!(
-                "Illegal arguments: width ({}), height ({})",
-                width, height
-            );
+            panic!("Illegal arguments: width ({}), height ({})", width, height);
         }
 
         self.reshape(width, height);
@@ -453,12 +450,17 @@ impl SurfMlpFeatureMap {
         }
     }
 
-    pub unsafe fn get_feature_vector(&mut self, feature_id: usize, feature_vec: *mut f32, roi: Rectangle) {
+    pub unsafe fn get_feature_vector(
+        &mut self,
+        feature_id: usize,
+        feature_vec: *mut f32,
+        roi: Rectangle,
+    ) {
         self.compute_feature_vector(feature_id, roi);
 
         SurfMlpFeatureMap::normalize_feature_vector(
             &self.feature_vectors[feature_id],
-            &mut self.feature_vectors_normalized[feature_id]
+            &mut self.feature_vectors_normalized[feature_id],
         );
 
         let feature_vec_normalized = self.feature_vectors_normalized[feature_id].as_ptr();

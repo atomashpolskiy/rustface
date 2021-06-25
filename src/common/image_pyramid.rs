@@ -162,11 +162,8 @@ impl ImagePyramid {
             self.width_scaled,
             self.height_scaled,
         );
-        let img_scaled = ImageData::new(
-            &self.img_buf_scaled,
-            self.width_scaled,
-            self.height_scaled,
-        );
+        let img_scaled =
+            ImageData::new(&self.img_buf_scaled, self.width_scaled, self.height_scaled);
         self.scale_factor *= self.scale_step;
 
         Some((img_scaled, scale_factor))

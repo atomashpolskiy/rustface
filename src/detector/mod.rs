@@ -19,11 +19,11 @@
 use std::cmp::Ordering::*;
 use std::{cmp, ptr};
 
-use crate::feat::LabBoostedFeatureMap;
-use crate::feat::SurfMlpFeatureMap;
-use crate::feat::FeatureMap;
 use crate::classifier::{Classifier, Score, SurfMlpBuffers};
 use crate::common::{resize_image, FaceInfo, ImageData, ImagePyramid, Rectangle, Seq};
+use crate::feat::FeatureMap;
+use crate::feat::LabBoostedFeatureMap;
+use crate::feat::SurfMlpFeatureMap;
 use crate::model::Model;
 use crate::Detector;
 
@@ -151,16 +151,26 @@ impl FuStDetector {
         }
     }
 
-    fn feature_map_for_classifier<'a>(classifier: &Classifier, maps: &'a mut FeatureMaps) -> &'a mut dyn FeatureMap {
+    fn feature_map_for_classifier<'a>(
+        classifier: &Classifier,
+        maps: &'a mut FeatureMaps,
+    ) -> &'a mut dyn FeatureMap {
         match classifier {
             Classifier::LabBoosted(_) => &mut maps.lab_boosted,
             Classifier::SurfMlp(_) => &mut maps.surf_mlp,
         }
     }
 
-    fn classify_with_classifier(classifier: &Classifier, output: Option<&mut Vec<f32>>, maps: &mut FeatureMaps, roi: Rectangle) -> Score {
+    fn classify_with_classifier(
+        classifier: &Classifier,
+        output: Option<&mut Vec<f32>>,
+        maps: &mut FeatureMaps,
+        roi: Rectangle,
+    ) -> Score {
         match classifier {
-            Classifier::SurfMlp(c) => c.classify(output, &mut maps.surf_buf, &mut maps.surf_mlp, roi),
+            Classifier::SurfMlp(c) => {
+                c.classify(output, &mut maps.surf_buf, &mut maps.surf_mlp, roi)
+            }
             Classifier::LabBoosted(c) => c.classify(&mut maps.lab_boosted, roi),
         }
     }
@@ -194,7 +204,10 @@ impl FuStDetector {
             .resize((roi_width * roi_height) as usize, 0);
         let mut src;
         unsafe {
-            src = img.data().as_ptr().offset((roi.y() * img_width + roi.x()) as isize);
+            src = img
+                .data()
+                .as_ptr()
+                .offset((roi.y() * img_width + roi.x()) as isize);
         }
         let mut dest = self.wnd_data_buf.as_mut_ptr();
         let len = roi_width as usize;
@@ -257,12 +270,7 @@ impl FuStDetector {
         }
 
         let src_img = ImageData::new(&self.wnd_data_buf, roi.width(), roi.height());
-        resize_image(
-            &src_img,
-            &mut self.wnd_data,
-            self.wnd_size,
-            self.wnd_size,
-        );
+        resize_image(&src_img, &mut self.wnd_data, self.wnd_size, self.wnd_size);
     }
 
     fn detect_impl(&mut self, image: &mut ImagePyramid) -> Vec<FaceInfo> {
@@ -271,8 +279,11 @@ impl FuStDetector {
         let mut proposals_nms = vec![Vec::new(); first_hierarchy_size];
 
         while let Some((image_scaled, scale_factor)) = image.get_next_scale_image() {
-            Self::feature_map_for_classifier(&self.model.get_classifiers()[0], &mut self.feature_maps).compute(&image_scaled);
-
+            Self::feature_map_for_classifier(
+                &self.model.get_classifiers()[0],
+                &mut self.feature_maps,
+            )
+            .compute(&image_scaled);
 
             let step_x = self.slide_wnd_step_x;
             let step_y = self.slide_wnd_step_y;
@@ -281,16 +292,25 @@ impl FuStDetector {
 
             for y in Seq::new(0, move |n| n + step_y).take_while(move |n| *n <= max_y) {
                 for x in Seq::new(0, move |n| n + step_x).take_while(move |n| *n <= max_x) {
-                    let rect = Rectangle::new(
-                        x as i32,
-                        y as i32,
-                        self.wnd_size,
-                        self.wnd_size,
+                    let rect = Rectangle::new(x as i32, y as i32, self.wnd_size, self.wnd_size);
+                    Self::feature_map_for_classifier(
+                        &self.model.get_classifiers()[0],
+                        &mut self.feature_maps,
                     );
-                    Self::feature_map_for_classifier(&self.model.get_classifiers()[0], &mut self.feature_maps);
 
-                    for (classifier, proposal) in self.model.get_classifiers().iter().zip(proposals.iter_mut()).take(first_hierarchy_size) {
-                        let score = Self::classify_with_classifier(classifier, None, &mut self.feature_maps, rect);
+                    for (classifier, proposal) in self
+                        .model
+                        .get_classifiers()
+                        .iter()
+                        .zip(proposals.iter_mut())
+                        .take(first_hierarchy_size)
+                    {
+                        let score = Self::classify_with_classifier(
+                            classifier,
+                            None,
+                            &mut self.feature_maps,
+                            rect,
+                        );
                         if score.is_positive() {
                             let mut wnd_info = FaceInfo::new();
                             let bbox = wnd_info.bbox_mut();
@@ -357,21 +377,19 @@ impl FuStDetector {
                             }
 
                             self.get_window_data(&image1x, bboxes[m].bbox_mut());
-                            let img_temp = ImageData::new(
-                                &self.wnd_data,
-                                self.wnd_size,
-                                self.wnd_size,
-                            );
+                            let img_temp =
+                                ImageData::new(&self.wnd_data, self.wnd_size, self.wnd_size);
                             let classifier = &self.model.get_classifiers()[model_idx];
-                            Self::feature_map_for_classifier(classifier, &mut self.feature_maps).compute(&img_temp);
-                            let rect = Rectangle::new(
-                                0,
-                                0,
-                                self.wnd_size,
-                                self.wnd_size,
-                            );
+                            Self::feature_map_for_classifier(classifier, &mut self.feature_maps)
+                                .compute(&img_temp);
+                            let rect = Rectangle::new(0, 0, self.wnd_size, self.wnd_size);
 
-                            let new_score = Self::classify_with_classifier(classifier, Some(&mut mlp_predicts), &mut self.feature_maps, rect);
+                            let new_score = Self::classify_with_classifier(
+                                classifier,
+                                Some(&mut mlp_predicts),
+                                &mut self.feature_maps,
+                                rect,
+                            );
                             if new_score.is_positive() {
                                 let x = bboxes[m].bbox().x() as f32;
                                 let y = bboxes[m].bbox().y() as f32;
@@ -494,11 +512,13 @@ fn non_maximum_suppression(
             let w = cmp::min(
                 x2,
                 bboxes[i].bbox().x() + bboxes[i].bbox().width() as i32 - 1,
-            ) - x + 1;
+            ) - x
+                + 1;
             let h = cmp::min(
                 y2,
                 bboxes[i].bbox().y() + bboxes[i].bbox().height() as i32 - 1,
-            ) - y + 1;
+            ) - y
+                + 1;
 
             if w <= 0 || h <= 0 {
                 continue;

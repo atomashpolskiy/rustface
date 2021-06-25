@@ -16,9 +16,9 @@
 // You should have received a copy of the BSD 2-Clause License along with the software.
 // If not, see < https://opensource.org/licenses/BSD-2-Clause>.
 
-use crate::math;
 use super::Score;
 use crate::feat::SurfMlpFeatureMap;
+use crate::math;
 use crate::Rectangle;
 use std::mem;
 
@@ -183,8 +183,7 @@ impl Layer {
         #[cfg(not(feature = "rayon"))]
         let it = self.weights.chunks(self.input_dim);
 
-        it
-            .zip(&self.biases)
+        it.zip(&self.biases)
             .zip(output)
             .for_each(|((weights, bias), output)| {
                 let x = math::vector_inner_product(input, weights) + bias;
@@ -204,7 +203,13 @@ impl Layer {
 }
 
 impl SurfMlpClassifier {
-    pub fn classify(&self, output: Option<&mut Vec<f32>>, bufs: &mut SurfMlpBuffers, feature_map: &mut SurfMlpFeatureMap, roi: Rectangle) -> Score {
+    pub fn classify(
+        &self,
+        output: Option<&mut Vec<f32>>,
+        bufs: &mut SurfMlpBuffers,
+        feature_map: &mut SurfMlpFeatureMap,
+        roi: Rectangle,
+    ) -> Score {
         let input_layer = self.layers.get(0).expect("No layers");
         bufs.input.resize(input_layer.input_size(), 0.0);
 
@@ -238,5 +243,4 @@ impl SurfMlpClassifier {
 
         score
     }
-
 }

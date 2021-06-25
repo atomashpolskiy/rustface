@@ -45,10 +45,7 @@ impl FeatureMap for LabBoostedFeatureMap {
         let height = image.height();
 
         if width == 0 || height == 0 {
-            panic!(
-                "Illegal arguments: width ({}), height ({})",
-                width, height
-            );
+            panic!("Illegal arguments: width ({}), height ({})", width, height);
         }
 
         self.reshape(width, height);
