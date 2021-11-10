@@ -106,10 +106,10 @@ cargo build --release
 
 Code for the demo is located in `examples/image_demo.rs` file. It performs face detection for a given image and saves the result into a file in the working directory.
 
-The simplest way to run the demo is to use the `bin/test.sh` script:
+You can run the demo using:
 
 ```
-./bin/test.sh <path-to-image>
+cargo run --release --example image_demo model/seeta_fd_frontal_v1.0.bin assets/test/scientists.jpg
 ```
 
 Please note that this library makes use of [Rayon](https://github.com/rayon-rs/rayon) framework to parallelize some computations. By default, **Rayon** spawns the same number of threads as the number of CPUs (logicals cores) available. Instead of making things faster, the penalty of switching between so many threads may severely hurt the performance, so it's strongly advised to keep the number of threads small by manually setting `RAYON_NUM_THREADS` environment variable.
@@ -117,7 +117,7 @@ Please note that this library makes use of [Rayon](https://github.com/rayon-rs/r
 ```
 # empirically found to be the sweet spot for the number of threads
 export RAYON_NUM_THREADS=2
-cargo run --release --example image_demo model/seeta_fd_frontal_v1.0.bin <path-to-image>
+cargo run --release --example image_demo model/seeta_fd_frontal_v1.0.bin assets/test/scientists.jpg
 ```
 
 Note that Rayon can be disabled entirely at compile time by providing the `--no-default-features` flag.
