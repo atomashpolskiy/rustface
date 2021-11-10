@@ -9,7 +9,7 @@ fi
 
 if [[ ${RUSTFACE_HOME} == "" ]]
 then
-    export RUSTFACE_HOME=$PWD
+    export RUSTFACE_HOME=`dirname "$0"`/../
 fi
 echo "Using ${RUSTFACE_HOME} as the working directory"
 
