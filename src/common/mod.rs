@@ -85,9 +85,6 @@ impl Rectangle {
 #[derive(Clone, Debug)]
 pub struct FaceInfo {
     bbox: Rectangle,
-    roll: f64,
-    pitch: f64,
-    yaw: f64,
     score: f64,
 }
 
@@ -95,9 +92,6 @@ impl Default for FaceInfo {
     fn default() -> Self {
         FaceInfo {
             bbox: Rectangle::new(0, 0, 0, 0),
-            roll: 0.0,
-            pitch: 0.0,
-            yaw: 0.0,
             score: 0.0,
         }
     }
