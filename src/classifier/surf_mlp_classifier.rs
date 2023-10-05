@@ -223,14 +223,14 @@ impl SurfMlpClassifier {
                 for &feature_id in &self.feature_ids[..] {
                     feature_map.get_feature_vector((feature_id - 1) as usize, dest, roi);
                     let offset = feature_map.get_feature_vector_dim(feature_id as usize);
-                    dest = dest.offset(offset as isize);
+                    dest = dest.add(offset);
                 }
             }
         }
 
         self.compute_internal(bufs);
 
-        let score = *bufs.output.get(0).expect("No score");
+        let score = *bufs.output.first().expect("No score");
         let score = Score {
             positive: score > self.thresh,
             score,

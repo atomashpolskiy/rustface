@@ -17,7 +17,7 @@
 // If not, see < https://opensource.org/licenses/BSD-2-Clause>.
 
 use crate::ImageData;
-use num;
+
 use num::integer::Integer;
 use num::traits::WrappingAdd;
 
@@ -81,8 +81,8 @@ impl LabBoostedFeatureMap {
     pub fn get_std_dev(&self, roi: Rectangle) -> f64 {
         let roi_width = roi.width() as i32;
         let roi_height = roi.height() as i32;
-        let roi_x = roi.x() as i32;
-        let roi_y = roi.y() as i32;
+        let roi_x = roi.x();
+        let roi_y = roi.y();
         let self_width = self.width as i32;
 
         let mean;

@@ -39,7 +39,7 @@ fn main() {
     let mut detector = match rustface::create_detector(options.model_path()) {
         Ok(detector) => detector,
         Err(error) => {
-            println!("Failed to create detector: {}", error.to_string());
+            println!("Failed to create detector: {}", error);
             std::process::exit(1)
         }
     };
@@ -87,7 +87,7 @@ fn detect_faces(detector: &mut dyn Detector, gray: &GrayImage) -> Vec<FaceInfo> 
 }
 
 fn get_millis(duration: Duration) -> u64 {
-    duration.as_secs() * 1000u64 + u64::from(duration.subsec_nanos() / 1_000_000)
+    duration.as_secs() * 1000u64 + u64::from(duration.subsec_millis())
 }
 
 struct Options {

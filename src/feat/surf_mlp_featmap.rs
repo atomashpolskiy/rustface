@@ -159,7 +159,7 @@ impl SurfMlpFeatureMap {
             it.for_each(|(inputs, outputs)| {
                 let src = inputs.as_ptr();
                 let dest = outputs.as_mut_ptr();
-                math::vector_sub(src.offset((step << 1) as isize), src, dest, len);
+                math::vector_sub(src.add(step << 1), src, dest, len);
             });
 
             let offset = ((self.height - 1) * self.width) as isize;
@@ -249,7 +249,7 @@ impl SurfMlpFeatureMap {
         unsafe {
             for r in 0..(self.height - 1) as isize {
                 let row1 = data.offset(r * len as isize);
-                let row2 = row1.offset(len as isize);
+                let row2 = row1.add(len);
                 math::vector_add(row1, row2, row2 as *mut i32, len);
             }
 
@@ -274,7 +274,7 @@ impl SurfMlpFeatureMap {
             let cols = len / num_channel - 1;
             for i in 0..cols as isize {
                 let col1 = x.offset(i * num_channel as isize);
-                let col2 = col1.offset(num_channel as isize);
+                let col2 = col1.add(num_channel);
                 math::vector_add(col1, col2, col2 as *mut i32, num_channel);
             }
         }

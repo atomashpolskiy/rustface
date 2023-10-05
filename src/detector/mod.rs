@@ -87,7 +87,7 @@ impl Detector for FuStDetector {
     }
 
     fn set_pyramid_scale_factor(&mut self, scale_factor: f32) {
-        if scale_factor < 0.01 || scale_factor > 0.99 {
+        if !(0.01..=0.99).contains(&scale_factor) {
             panic!("Illegal scale factor: {}", scale_factor);
         }
         self.image_pyramid_scale_factor = scale_factor;
@@ -345,7 +345,7 @@ impl FuStDetector {
                 buf_idx.resize(hierarchy_size_i, 0);
             }
 
-            for r in buf_idx.iter_mut().take(hierarchy_size_i as usize) {
+            for r in buf_idx.iter_mut().take(hierarchy_size_i) {
                 {
                     let wnd_src = self.model.get_wnd_src(cls_idx);
                     *r = wnd_src[0];

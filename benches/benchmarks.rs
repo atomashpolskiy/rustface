@@ -19,7 +19,7 @@ fn get_test_image() -> DynamicImage {
         }
     };
 
-    return image;
+    image
 }
 
 fn get_default_detector() -> Box<dyn Detector> {
@@ -27,7 +27,7 @@ fn get_default_detector() -> Box<dyn Detector> {
     let mut detector = match rustface::create_detector(model_path) {
         Ok(detector) => detector,
         Err(error) => {
-            println!("Failed to create detector: {}", error.to_string());
+            println!("Failed to create detector: {}", error);
             std::process::exit(1)
         }
     };
@@ -38,7 +38,7 @@ fn get_default_detector() -> Box<dyn Detector> {
     detector.set_pyramid_scale_factor(0.8);
     detector.set_slide_window_step(4, 4);
 
-    return detector;
+    detector
 }
 
 fn detect_single_image(c: &mut Criterion) {
@@ -65,7 +65,7 @@ fn detect_single_image(c: &mut Criterion) {
 
 fn bench_square(c: &mut Criterion) {
     c.bench_function("math_square 500", |b| {
-        let src: Vec<_> = (0..500).map(|i| i).collect();
+        let src: Vec<_> = (0..500).collect();
         let mut dest = vec![0; 500];
         b.iter(|| {
             square(&src, &mut dest);
@@ -85,7 +85,7 @@ fn bench_abs(c: &mut Criterion) {
 
 fn bench_vector_add_dest(c: &mut Criterion) {
     c.bench_function("math_vector_add dest", move |b| {
-        let src: Vec<_> = (0..500).map(|i| i).collect();
+        let src: Vec<_> = (0..500).collect();
         let mut dest = vec![0; 500];
         b.iter(|| {
             unsafe { vector_add(src.as_ptr(), src.as_ptr(), dest.as_mut_ptr(), src.len()) };
@@ -95,7 +95,7 @@ fn bench_vector_add_dest(c: &mut Criterion) {
 
 fn bench_vector_add_inplace(c: &mut Criterion) {
     c.bench_function("math_vector_add in-place", move |b| {
-        let mut vec: Vec<_> = (0..500).map(|i| i).collect();
+        let mut vec: Vec<_> = (0..500).collect();
         b.iter(|| {
             unsafe { vector_add(vec.as_ptr(), vec.as_ptr(), vec.as_mut_ptr(), vec.len()) };
         })
@@ -104,7 +104,7 @@ fn bench_vector_add_inplace(c: &mut Criterion) {
 
 fn bench_vector_sub_inplace(c: &mut Criterion) {
     c.bench_function("math_vector_sub in-place", move |b| {
-        let mut vec: Vec<_> = (0..500).map(|i| i).collect();
+        let mut vec: Vec<_> = (0..500).collect();
         b.iter(|| {
             unsafe { vector_sub(vec.as_ptr(), vec.as_ptr(), vec.as_mut_ptr(), vec.len()) };
         })
@@ -139,7 +139,7 @@ fn bench_square_compare(c: &mut Criterion) {
     let notsafe = Fun::new("unsafe", |b, input: &Vec<i32>| {
         let mut target: Vec<u32> = vec![0; input.len()];
         b.iter(|| {
-            square(&input, &mut target[..input.len()]);
+            square(input, &mut target[..input.len()]);
         })
     });
 
