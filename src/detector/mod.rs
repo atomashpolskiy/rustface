@@ -171,7 +171,7 @@ impl FuStDetector {
             Classifier::SurfMlp(c) => {
                 c.classify(output, &mut maps.surf_buf, &mut maps.surf_mlp, roi)
             }
-            Classifier::LabBoosted(c) => c.classify(&mut maps.lab_boosted, roi),
+            Classifier::LabBoosted(c) => c.classify(&maps.lab_boosted, roi),
         }
     }
 
