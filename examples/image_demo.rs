@@ -75,9 +75,9 @@ fn main() {
 
 fn detect_faces(detector: &mut dyn Detector, gray: &GrayImage) -> Vec<FaceInfo> {
     let (width, height) = gray.dimensions();
-    let mut image = ImageData::new(gray, width, height);
+    let image = ImageData::new(gray, width, height);
     let now = Instant::now();
-    let faces = detector.detect(&mut image);
+    let faces = detector.detect(&image);
     println!(
         "Found {} faces in {} ms",
         faces.len(),
