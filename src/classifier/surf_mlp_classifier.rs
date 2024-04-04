@@ -210,7 +210,7 @@ impl SurfMlpClassifier {
         feature_map: &mut SurfMlpFeatureMap,
         roi: Rectangle,
     ) -> Score {
-        let input_layer = self.layers.get(0).expect("No layers");
+        let input_layer = self.layers.first().expect("No layers");
         bufs.input.resize(input_layer.input_size(), 0.0);
 
         let num_layers = self.layers.len();
